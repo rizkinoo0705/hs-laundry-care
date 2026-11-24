@@ -13,39 +13,64 @@ class DeliveryScheduleTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_antar_requires_order_and_takes_customer_from_order(): void
+    private User $admin;
+
+    protected function setUp(): void
     {
-        $admin = User::create(['name' => 'Admin', 'email' => 'a@test.id', 'password' => 'rahasia123', 'role' => 'admin']);
+        parent::setUp();
+        $this->admin = User::create(['name' => 'Admin', 'email' => 'a@test.id', 'password' => 'rahasia123', 'role' => 'admin']);
+    }
+
+    private function order(string $code, Customer $c, string $status, string $method, bool $pickup = false): Order
+    {
+        return Order::create(['code' => $code, 'customer_id' => $c->id, 'status' => $status, 'delivery_method' => $method,
+            'pickup' => $pickup, 'subtotal' => 21000, 'total' => 21000]);
+    }
+
+    private function post(array $data)
+    {
+        return $this->actingAs($this->admin)->post(route('deliveries.store'), $data + [
+            'target' => 'customer', 'scheduled_at' => now()->addHour()->format('Y-m-d H:i'),
+        ]);
+    }
+
+    public function test_antar_requires_ready_antar_order_and_takes_customer_from_order(): void
+    {
         $nia = Customer::create(['name' => 'Nia', 'phone' => '081313148938', 'address' => 'Jl. Melati 1']);
         $budi = Customer::create(['name' => 'Budi', 'phone' => '081200000002', 'address' => 'Jl. Mawar 2']);
-        $order = Order::create(['code' => 'HS-T-001', 'customer_id' => $nia->id, 'status' => 'siap', 'subtotal' => 21000, 'total' => 21000]);
 
-        // Antar tanpa order -> ditolak
-        $this->actingAs($admin)->post(route('deliveries.store'), [
-            'type' => 'antar', 'target' => 'customer', 'customer_id' => $nia->id, 'scheduled_at' => now()->addHour()->format('Y-m-d H:i'),
-        ])->assertSessionHasErrors('order_id');
+        $ready = $this->order('HS-SIAP-ANTAR', $nia, 'siap', 'antar', true);       // jemput + antar, siap
+        $ambil = $this->order('HS-SIAP-AMBIL', $budi, 'siap', 'ambil');            // diambil sendiri
+        $proses = $this->order('HS-PROSES-ANTAR', $budi, 'dicuci', 'antar');       // belum siap
+        $jemput = $this->order('HS-JEMPUT', $budi, 'diterima', 'ambil', true);     // perlu dijemput
+
+        // Daftar order di form
+        $page = $this->actingAs($this->admin)->get(route('deliveries.create'))->assertOk();
+        $page->assertSee('HS-SIAP-ANTAR')->assertSee('HS-JEMPUT')
+            ->assertDontSee('HS-SIAP-AMBIL')->assertDontSee('HS-PROSES-ANTAR');
+
+        // Antar tanpa order / order tidak memenuhi syarat -> ditolak
+        $this->post(['type' => 'antar', 'customer_id' => $nia->id])->assertSessionHasErrors('order_id');
+        $this->post(['type' => 'antar', 'order_id' => $ambil->id])->assertSessionHasErrors('order_id');
+        $this->post(['type' => 'antar', 'order_id' => $proses->id])->assertSessionHasErrors('order_id');
         $this->assertSame(0, Delivery::count());
 
-        // Antar dengan order -> pelanggan diambil dari order, walau yang dipilih berbeda/kosong
-        $this->actingAs($admin)->post(route('deliveries.store'), [
-            'type' => 'antar', 'target' => 'customer', 'order_id' => $order->id, 'customer_id' => $budi->id,
-            'scheduled_at' => now()->addHour()->format('Y-m-d H:i'),
-        ])->assertSessionHasNoErrors()->assertRedirect();
-        $this->actingAs($admin)->post(route('deliveries.store'), [
-            'type' => 'antar', 'target' => 'customer', 'order_id' => $order->id,
-            'scheduled_at' => now()->addHour()->format('Y-m-d H:i'),
-        ])->assertSessionHasNoErrors()->assertRedirect();
+        // Order siap + layanan antar -> berhasil, pelanggan dari order
+        $this->post(['type' => 'antar', 'order_id' => $ready->id, 'customer_id' => $budi->id])
+            ->assertSessionHasNoErrors()->assertRedirect();
+        $d = Delivery::first();
+        $this->assertSame($nia->id, $d->customer_id);
+        $this->assertSame('Jl. Melati 1', $d->address);
 
-        $this->assertSame([$nia->id, $nia->id], Delivery::orderBy('id')->pluck('customer_id')->all());
-        $this->assertSame('Jl. Melati 1', Delivery::first()->address);
+        // Tidak boleh dobel, dan hilang dari daftar
+        $this->post(['type' => 'antar', 'order_id' => $ready->id])->assertSessionHasErrors('order_id');
+        $this->actingAs($this->admin)->get(route('deliveries.create'))->assertDontSee('HS-SIAP-ANTAR');
 
         // Jemput tetap boleh tanpa order
-        $this->actingAs($admin)->post(route('deliveries.store'), [
-            'type' => 'jemput', 'target' => 'customer', 'customer_id' => $budi->id, 'scheduled_at' => now()->addHour()->format('Y-m-d H:i'),
-        ])->assertSessionHasNoErrors()->assertRedirect();
-        $this->assertSame(3, Delivery::count());
+        $this->post(['type' => 'jemput', 'customer_id' => $budi->id])->assertSessionHasNoErrors()->assertRedirect();
+        $this->assertSame(2, Delivery::count());
 
-        $this->actingAs($admin)->get(route('deliveries.create'))->assertOk()->assertSee('HS-T-001');
-        $this->actingAs($admin)->get(route('deliveries.index', ['date' => now()->addHour()->toDateString()]))->assertOk()->assertSee('HS-T-001');
+        $this->actingAs($this->admin)->get(route('deliveries.index', ['date' => now()->addHour()->toDateString()]))
+            ->assertOk()->assertSee('HS-SIAP-ANTAR');
     }
 }

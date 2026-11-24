@@ -38,9 +38,8 @@ class DeliveryController extends Controller
 
         return view('deliveries.create', [
             'order' => $order,
-            'orders' => Order::with('customer')->where('status', '!=', 'batal')
-                ->where(fn ($q) => $q->whereNotIn('status', ['selesai'])->orWhere('id', $order?->id))
-                ->latest()->limit(300)->get(),
+            'antarOrders' => $this->ordersReadyToDeliver(),
+            'jemputOrders' => $this->ordersWaitingPickup(),
             'customers' => Customer::orderBy('name')->get(['id', 'name', 'phone', 'address']),
             'mitras' => Mitra::where('active', true)->orderBy('name')->get(),
             'couriers' => Staff::active()->get(),
@@ -69,6 +68,17 @@ class DeliveryController extends Controller
             'order_id.required_if' => 'Jadwal antar wajib memilih nomor order.',
             'mitra_id.required_if' => 'Pilih mitra.',
         ]);
+
+        // Antar hanya untuk order yang sudah siap dan memilih layanan antar / jemput + antar.
+        if ($data['type'] === 'antar') {
+            $o = Order::find($data['order_id']);
+            if ($o->status !== 'siap' || $o->delivery_method !== 'antar') {
+                return back()->withInput()->withErrors(['order_id' => 'Order '.$o->code.' belum siap diantar atau tidak memilih layanan antar.']);
+            }
+            if ($o->deliveries()->where('type', 'antar')->where('status', '!=', 'batal')->exists()) {
+                return back()->withInput()->withErrors(['order_id' => 'Order '.$o->code.' sudah punya jadwal antar.']);
+            }
+        }
 
         // Antar ke pelanggan: pelanggan selalu mengikuti order yang dipilih.
         if (! empty($data['order_id']) && $data['target'] === 'customer') {
@@ -102,6 +112,28 @@ class DeliveryController extends Controller
 
         return redirect()->route('deliveries.index', ['date' => $delivery->scheduled_at->toDateString()])
             ->with('success', 'Jadwal '.strtolower($delivery->typeLabel()).' dibuat.');
+    }
+
+    /** Order siap diantar: status "siap", layanan antar / jemput + antar, belum ada jadwal antar aktif. */
+    private function ordersReadyToDeliver()
+    {
+        return Order::with('customer')
+            ->where('status', 'siap')
+            ->where('delivery_method', 'antar')
+            ->whereDoesntHave('deliveries', fn ($q) => $q->where('type', 'antar')->where('status', '!=', 'batal'))
+            ->orderBy('code')
+            ->get();
+    }
+
+    /** Order yang perlu dijemput: layanan jemput / jemput + antar, belum ada jadwal jemput aktif. */
+    private function ordersWaitingPickup()
+    {
+        return Order::with('customer')
+            ->where('pickup', true)
+            ->whereIn('status', ['diterima'])
+            ->whereDoesntHave('deliveries', fn ($q) => $q->where('type', 'jemput')->where('status', '!=', 'batal'))
+            ->orderBy('code')
+            ->get();
     }
 
     public function updateStatus(Request $request, Delivery $delivery, StaffCommissionService $commissions)

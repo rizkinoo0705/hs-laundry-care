@@ -15,7 +15,7 @@
                 <label for="type">Jenis</label>
                 <select id="type" name="type">
                     @foreach (\App\Models\Delivery::TYPES as $key => $label)
-                        <option value="{{ $key }}" @selected(old('type', $order ? 'antar' : 'jemput') === $key)>{{ $label }}</option>
+                        <option value="{{ $key }}" @selected(old('type', $order && $order->status === 'siap' ? 'antar' : 'jemput') === $key)>{{ $label }}</option>
                     @endforeach
                 </select>
             </div>
@@ -29,14 +29,16 @@
             <label for="order_id">No. order <span id="order-required" class="muted">(wajib untuk antar)</span></label>
             <select id="order_id" name="order_id">
                 <option value="">Pilih order</option>
-                @foreach ($orders as $o)
-                    <option value="{{ $o->id }}" data-customer="{{ $o->customer_id }}" data-mitra="{{ $o->mitra_id }}" data-address="{{ $o->customer->address }}"
-                        @selected((string) old('order_id', $order?->id) === (string) $o->id)>
-                        {{ $o->code }} · {{ $o->customer->name }} · {{ $o->statusLabel() }}
-                    </option>
+                @foreach ([['antar', $antarOrders], ['jemput', $jemputOrders]] as [$kind, $list])
+                    @foreach ($list as $o)
+                        <option value="{{ $o->id }}" data-kind="{{ $kind }}" data-customer="{{ $o->customer_id }}" data-mitra="{{ $o->mitra_id }}" data-address="{{ $o->customer->address }}"
+                            @selected((string) old('order_id', $order?->id) === (string) $o->id)>
+                            {{ $o->code }} · {{ $o->customer->name }} · {{ $o->tripsLabel() }}
+                        </option>
+                    @endforeach
                 @endforeach
             </select>
-            <div class="hint">Order yang masih diproses. Pelanggan &amp; alamat terisi otomatis dari order.</div>
+            <div class="hint" id="order-hint"></div>
             @error('order_id')<div class="error">{{ $message }}</div>@enderror
         </div>
 
@@ -117,8 +119,20 @@
     const orderSel = document.getElementById('order_id');
     const toggleOrder = () => {
         const antar = type.value === 'antar';
+        const kind = antar ? 'antar' : 'jemput';
+        let available = 0;
+        orderSel.querySelectorAll('option[data-kind]').forEach((opt) => {
+            const show = opt.dataset.kind === kind;
+            opt.hidden = !show;
+            opt.disabled = !show;
+            if (show) available++;
+            if (!show && opt.selected) orderSel.value = '';
+        });
         orderSel.required = antar;
         document.getElementById('order-required').textContent = antar ? '(wajib)' : '(opsional)';
+        document.getElementById('order-hint').textContent = antar
+            ? (available ? 'Order berstatus "Siap Diambil/Antar" dengan layanan Antar atau Jemput + antar.' : 'Belum ada order yang siap diantar. Ubah status order ke "Siap Diambil/Antar" dulu.')
+            : 'Opsional. Order dengan layanan Jemput / Jemput + antar yang belum dijemput.';
     };
     orderSel.addEventListener('change', () => {
         const opt = orderSel.selectedOptions[0];

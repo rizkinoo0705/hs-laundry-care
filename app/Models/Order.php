@@ -100,6 +100,11 @@ class Order extends Model
         return $this->belongsTo(Staff::class);
     }
 
+    public function deliveries(): HasMany
+    {
+        return $this->hasMany(Delivery::class);
+    }
+
     public function staffCommissions(): HasMany
     {
         return $this->hasMany(StaffCommission::class);
