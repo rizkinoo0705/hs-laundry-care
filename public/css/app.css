@@ -276,3 +276,14 @@ dl.info dd { margin: 0; }
   .zone-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); border: 1px solid var(--line); border-radius: 10px; padding: 10px; }
   .zone-row > :first-child { grid-column: 1 / -1; }
 }
+
+/* Pilihan radio berbentuk kartu */
+fieldset.choice-group { border: 0; padding: 0; margin: 0 0 14px; }
+fieldset.choice-group legend { font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px; padding: 0; }
+.choice-group { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.choice { display: flex; align-items: flex-start; gap: 10px; margin: 0; padding: 10px 12px; min-height: 44px; border: 1px solid #94A3B8; border-radius: 10px; cursor: pointer; background: var(--white); font-weight: 400; }
+.choice input { width: 20px; height: 20px; margin: 2px 0 0; flex: 0 0 auto; accent-color: var(--navy); }
+.choice:has(input:checked) { border: 2px solid var(--navy); background: var(--sky-soft); padding: 9px 11px; }
+.choice-title { display: block; font-size: 14px; font-weight: 600; color: var(--ink); }
+.choice-desc { display: block; font-size: 12px; color: var(--muted); line-height: 1.35; }
+@media (max-width: 400px) { .choice-group { grid-template-columns: minmax(0, 1fr); } }

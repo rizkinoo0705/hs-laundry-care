@@ -27,6 +27,14 @@ class Order extends Model
         'qris' => 'QRIS',
     ];
 
+    /** Pilihan antar-jemput di form order (dipetakan ke pickup + delivery_method). */
+    public const DELIVERY_MODES = [
+        'none' => ['title' => 'Tidak', 'desc' => 'Pelanggan datang & ambil sendiri ke outlet', 'pickup' => false, 'method' => 'ambil'],
+        'jemput' => ['title' => 'Jemput saja', 'desc' => 'Kurir jemput cucian; pelanggan ambil sendiri', 'pickup' => true, 'method' => 'ambil'],
+        'antar' => ['title' => 'Antar saja', 'desc' => 'Pelanggan datang ke outlet; kurir antar hasilnya', 'pickup' => false, 'method' => 'antar'],
+        'keduanya' => ['title' => 'Jemput + antar', 'desc' => 'Kurir jemput dan antar kembali (2 perjalanan)', 'pickup' => true, 'method' => 'antar'],
+    ];
+
     public const DELIVERY_METHODS = [
         'ambil' => 'Diambil sendiri',
         'antar' => 'Diantar',

@@ -62,6 +62,11 @@ class OrderController extends Controller
     {
         $request->merge(['customer_phone' => Phone::normalize($request->input('customer_phone'))]);
 
+        // Form memakai satu pilihan antar-jemput; terjemahkan ke pickup + delivery_method.
+        if ($mode = Order::DELIVERY_MODES[$request->input('delivery_mode')] ?? null) {
+            $request->merge(['pickup' => $mode['pickup'] ? '1' : '0', 'delivery_method' => $mode['method']]);
+        }
+
         $data = $request->validate([
             'customer_name' => ['required', 'string', 'max:100'],
             'customer_phone' => ['required', 'string', 'regex:/^0[0-9]{8,14}$/'],

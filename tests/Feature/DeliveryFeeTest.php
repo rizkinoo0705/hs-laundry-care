@@ -144,6 +144,29 @@ class DeliveryFeeTest extends TestCase
         $this->actingAs($this->admin)->get(route('reports.index'))->assertOk()->assertSee('Ongkir antar-jemput');
     }
 
+    public function test_delivery_mode_choice_maps_to_trips(): void
+    {
+        $this->customerAt(1.5);
+        $expected = ['none' => [false, 'ambil', 0, 0], 'jemput' => [true, 'ambil', 1, 5000], 'antar' => [false, 'antar', 1, 5000], 'keduanya' => [true, 'antar', 2, 10000]];
+
+        foreach ($expected as $mode => [$pickup, $method, $trips, $fee]) {
+            $this->actingAs($this->admin)->post(route('orders.store'), [
+                'customer_name' => 'Nia',
+                'customer_phone' => '081313148938',
+                'delivery_mode' => $mode,
+                'items' => [['service_id' => $this->kiloan->id, 'qty' => '3']],
+            ])->assertSessionHasNoErrors();
+
+            $order = Order::latest('id')->first();
+            $this->assertSame($pickup, $order->pickup, $mode);
+            $this->assertSame($method, $order->delivery_method, $mode);
+            $this->assertSame($trips, $order->delivery_trips, $mode);
+            $this->assertSame(21000 + $fee, $order->total, $mode);
+        }
+
+        $this->actingAs($this->admin)->get(route('orders.create'))->assertOk()->assertSee('Jemput + antar');
+    }
+
     public function test_quote_endpoint_returns_json(): void
     {
         $this->customerAt(1.5);

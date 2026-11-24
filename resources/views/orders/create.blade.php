@@ -36,15 +36,21 @@
 
             <div class="card">
                 <h2>Antar-jemput &amp; mitra</h2>
-                <label class="check"><input type="checkbox" name="pickup" value="1" id="pickup" @checked(old('pickup'))> Cucian dijemput ke rumah pelanggan</label>
-                <div class="field">
-                    <label for="delivery_method">Setelah selesai</label>
-                    <select id="delivery_method" name="delivery_method">
-                        @foreach (\App\Models\Order::DELIVERY_METHODS as $key => $label)
-                            <option value="{{ $key }}" @selected(old('delivery_method', 'ambil') === $key)>{{ $label }}</option>
-                        @endforeach
-                    </select>
-                </div>
+                @php
+                    $mode = old('delivery_mode', 'none');
+                @endphp
+                <fieldset class="choice-group">
+                    <legend>Cucian diantar-jemput kurir?</legend>
+                    @foreach (\App\Models\Order::DELIVERY_MODES as $key => $opt)
+                        <label class="choice">
+                            <input type="radio" name="delivery_mode" value="{{ $key }}" @checked($mode === $key)>
+                            <span>
+                                <span class="choice-title">{{ $opt['title'] }}</span>
+                                <span class="choice-desc">{{ $opt['desc'] }}</span>
+                            </span>
+                        </label>
+                    @endforeach
+                </fieldset>
                 <div class="fee-box" id="fee-box" hidden>
                     <div id="fee-info">Menghitung ongkir…</div>
                     <div class="field" id="manual-fee-wrap" style="margin: 8px 0 0">
@@ -174,8 +180,9 @@
     }
 
     function fetchQuote() {
-        const pickup = document.getElementById('pickup').checked;
-        const method = document.getElementById('delivery_method').value;
+        const mode = currentMode();
+        const pickup = mode === 'jemput' || mode === 'keduanya';
+        const method = (mode === 'antar' || mode === 'keduanya') ? 'antar' : 'ambil';
         const manual = document.getElementById('manual_delivery_fee').value;
         const phone = document.getElementById('customer_phone').value;
         if (!pickup && method !== 'antar') {
@@ -198,8 +205,8 @@
 
     function showQuote(q) {
         const parts = [];
-        const trips = q.trips + ' perjalanan (' + [document.getElementById('pickup').checked ? 'jemput' : null,
-            document.getElementById('delivery_method').value === 'antar' ? 'antar' : null].filter(Boolean).join(' + ') + ')';
+        const mode = currentMode();
+        const trips = q.trips + ' perjalanan (' + ({ jemput: 'jemput', antar: 'antar', keduanya: 'jemput + antar' }[mode] || '') + ')';
         if (q.manual) {
             parts.push('<strong>Ongkir manual ' + rupiah(q.fee) + '</strong> · ' + trips);
         } else if (q.no_location) {
@@ -218,7 +225,11 @@
         feeInfo.innerHTML = parts.join('<br>');
     }
 
-    ['pickup', 'delivery_method'].forEach((id) => document.getElementById(id).addEventListener('change', scheduleQuote));
+    function currentMode() {
+        const checked = document.querySelector('input[name=delivery_mode]:checked');
+        return checked ? checked.value : 'none';
+    }
+    document.querySelectorAll('input[name=delivery_mode]').forEach((el) => el.addEventListener('change', scheduleQuote));
     document.getElementById('manual_delivery_fee').addEventListener('input', scheduleQuote);
     document.getElementById('customer_phone').addEventListener('change', scheduleQuote);
 

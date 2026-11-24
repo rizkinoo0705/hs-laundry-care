@@ -106,8 +106,7 @@
         <div class="card">
             <h2>Info order</h2>
             <dl class="info">
-                <dt>Setelah selesai</dt><dd>{{ \App\Models\Order::DELIVERY_METHODS[$order->delivery_method] ?? $order->delivery_method }}</dd>
-                <dt>Antar-jemput</dt><dd>{{ $order->tripsLabel() }}@if ($order->distance_km !== null) · {{ qty($order->distance_km) }} km @endif</dd>
+                <dt>Antar-jemput</dt><dd>{{ $order->delivery_trips > 0 || $order->pickup || $order->delivery_method === 'antar' ? $order->tripsLabel() : 'Tidak (datang & ambil sendiri)' }}@if ($order->distance_km !== null) · {{ qty($order->distance_km) }} km @endif</dd>
                 <dt>Estimasi selesai</dt><dd>{{ $order->due_at?->translatedFormat('d M Y H:i') ?? '-' }}</dd>
                 @if ($order->completed_at)<dt>Selesai</dt><dd>{{ $order->completed_at->translatedFormat('d M Y H:i') }}</dd>@endif
                 @if ($order->paid_at)<dt>Dibayar</dt><dd>{{ $order->paid_at->translatedFormat('d M Y H:i') }} ({{ \App\Models\Order::PAYMENT_METHODS[$order->payment_method] ?? $order->payment_method }})</dd>@endif
