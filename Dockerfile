@@ -14,4 +14,6 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 
 EXPOSE 8000
 
+RUN sed -i "s/\r$//" /usr/local/bin/entrypoint.sh
+
 ENTRYPOINT ["entrypoint.sh"]
