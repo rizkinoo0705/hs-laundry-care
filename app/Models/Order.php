@@ -32,6 +32,11 @@ class Order extends Model
         'antar' => 'Diantar',
     ];
 
+    protected $attributes = [
+        'status' => 'diterima', 'delivery_method' => 'ambil', 'subtotal' => 0, 'discount' => 0,
+        'total' => 0, 'total_kg' => 0, 'payment_status' => 'belum', 'stamp_awarded' => false, 'commission_amount' => 0,
+    ];
+
     protected $fillable = [
         'code', 'customer_id', 'mitra_id', 'user_id', 'status', 'delivery_method',
         'subtotal', 'discount', 'total', 'total_kg', 'payment_status', 'payment_method',

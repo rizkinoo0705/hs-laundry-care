@@ -19,6 +19,8 @@ class Delivery extends Model
         'batal' => 'Batal',
     ];
 
+    protected $attributes = ['status' => 'terjadwal'];
+
     protected $fillable = [
         'type', 'customer_id', 'order_id', 'mitra_id', 'address',
         'scheduled_at', 'courier_id', 'status', 'notes', 'completed_at',

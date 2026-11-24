@@ -19,6 +19,8 @@ class Service extends Model
         'pcs' => 'pcs',
     ];
 
+    protected $attributes = ['duration_hours' => 48, 'active' => true];
+
     protected $fillable = ['name', 'category', 'unit', 'price', 'duration_hours', 'active'];
 
     protected function casts(): array

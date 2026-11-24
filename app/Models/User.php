@@ -16,6 +16,8 @@ class User extends Authenticatable
         'mitra' => 'Mitra Dropbox',
     ];
 
+    protected $attributes = ['role' => 'kasir', 'active' => true];
+
     protected $fillable = ['name', 'email', 'password', 'role', 'mitra_id', 'active'];
 
     protected $hidden = ['password', 'remember_token'];

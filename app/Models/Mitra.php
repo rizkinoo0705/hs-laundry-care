@@ -12,6 +12,8 @@ class Mitra extends Model
         'percent' => 'Persen dari total',
     ];
 
+    protected $attributes = ['commission_type' => 'per_kg', 'commission_value' => 1000, 'active' => true];
+
     protected $fillable = [
         'name', 'owner_name', 'phone', 'address',
         'commission_type', 'commission_value', 'active',
