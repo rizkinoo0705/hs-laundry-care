@@ -37,6 +37,11 @@
                 <input type="number" id="price" name="price" min="0" step="500" required value="{{ old('price', $service->price) }}" inputmode="numeric">
             </div>
             <div class="field">
+                <label for="min_qty">Minimum ditagih (<span id="min-unit">{{ old('unit', $service->unit) ?: 'kg' }}</span>)</label>
+                <input type="number" id="min_qty" name="min_qty" min="0" step="0.5" value="{{ old('min_qty', $service->hasMinimum() ? qty($service->min_qty) : '') }}" inputmode="decimal" placeholder="Kosongkan jika tanpa minimum">
+                <div class="hint">Mis. 3: cucian 2,5 kg ditagih 3 kg; 4 kg ditagih 4 kg.</div>
+            </div>
+            <div class="field">
                 <label for="duration_hours">Estimasi selesai (jam)</label>
                 <input type="number" id="duration_hours" name="duration_hours" min="1" required value="{{ old('duration_hours', $service->duration_hours) }}" inputmode="numeric">
             </div>
@@ -50,3 +55,11 @@
     </form>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.getElementById('unit').addEventListener('change', function () {
+    document.getElementById('min-unit').textContent = this.value;
+});
+</script>
+@endpush

@@ -33,7 +33,8 @@ class OrderService
 
             $items = [];
             $subtotal = 0;
-            $totalKg = 0.0;
+            $totalKg = 0.0;     // berat sebenarnya
+            $billedKg = 0.0;    // berat yang ditagih (dasar komisi mitra)
             $maxHours = 0;
 
             foreach ($data['items'] as $row) {
@@ -43,13 +44,15 @@ class OrderService
                 }
 
                 $qty = round((float) $row['qty'], 2);
-                $lineTotal = (int) round($qty * $service->price);
+                $charged = round($service->chargedQty($qty), 2);
+                $lineTotal = (int) round($charged * $service->price);
 
                 $items[] = [
                     'service_id' => $service->id,
                     'service_name' => $service->name,
                     'unit' => $service->unit,
                     'qty' => $qty,
+                    'charged_qty' => $charged,
                     'price' => $service->price,
                     'subtotal' => $lineTotal,
                 ];
@@ -57,6 +60,7 @@ class OrderService
                 $subtotal += $lineTotal;
                 if ($service->unit === 'kg') {
                     $totalKg += $qty;
+                    $billedKg += $charged;
                 }
                 $maxHours = max($maxHours, $service->duration_hours);
             }
@@ -65,7 +69,7 @@ class OrderService
             $total = $subtotal - $discount;
 
             $mitra = ! empty($data['mitra_id']) ? Mitra::find($data['mitra_id']) : null;
-            $commission = $mitra ? $mitra->commissionFor($totalKg, $total) : 0;
+            $commission = $mitra ? $mitra->commissionFor($billedKg, $total) : 0;
 
             $payNow = ! empty($data['pay_now']);
 

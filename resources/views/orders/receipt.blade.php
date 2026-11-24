@@ -39,7 +39,10 @@
     <table>
         @foreach ($order->items as $item)
             <tr><td colspan="2">{{ $item->service_name }}</td></tr>
-            <tr><td>{{ qty($item->qty) }}{{ $item->unit }} x {{ number_format($item->price, 0, ',', '.') }}</td><td class="r">{{ number_format($item->subtotal, 0, ',', '.') }}</td></tr>
+            @if ($item->usesMinimum())
+                <tr><td colspan="2">Berat {{ qty($item->qty) }}{{ $item->unit }}, min. {{ qty($item->charged_qty) }}{{ $item->unit }}</td></tr>
+            @endif
+            <tr><td>{{ qty($item->billedQty()) }}{{ $item->unit }} x {{ number_format($item->price, 0, ',', '.') }}</td><td class="r">{{ number_format($item->subtotal, 0, ',', '.') }}</td></tr>
         @endforeach
     </table>
     <hr>

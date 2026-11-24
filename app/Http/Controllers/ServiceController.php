@@ -46,11 +46,15 @@ class ServiceController extends Controller
             'category' => ['required', Rule::in(array_keys(Service::CATEGORIES))],
             'unit' => ['required', Rule::in(array_keys(Service::UNITS))],
             'price' => ['required', 'integer', 'min:0'],
+            'min_qty' => ['nullable', 'numeric', 'min:0', 'max:1000'],
             'duration_hours' => ['required', 'integer', 'min:1', 'max:720'],
             'active' => ['nullable', 'boolean'],
         ]);
 
         $data['active'] = $request->boolean('active');
+        $data['min_qty'] = $request->filled('min_qty') && (float) $request->input('min_qty') > 0
+            ? $request->input('min_qty')
+            : null;
 
         return $data;
     }

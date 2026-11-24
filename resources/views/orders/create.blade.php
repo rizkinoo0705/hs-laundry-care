@@ -72,9 +72,9 @@
                                 <label>Layanan</label>
                                 <select name="items[{{ $i }}][service_id]" class="js-service" required>
                                     @foreach ($services as $s)
-                                        <option value="{{ $s->id }}" data-price="{{ $s->price }}" data-unit="{{ $s->unit }}"
+                                        <option value="{{ $s->id }}" data-price="{{ $s->price }}" data-unit="{{ $s->unit }}" data-min="{{ $s->hasMinimum() ? (float) $s->min_qty : 0 }}"
                                             @selected((string) ($item['service_id'] ?? '') === (string) $s->id)>
-                                            {{ $s->name }} - {{ rupiah($s->price) }}/{{ $s->unit }}
+                                            {{ $s->name }} - {{ rupiah($s->price) }}/{{ $s->unit }}@if ($s->hasMinimum()) (min. {{ qty($s->min_qty) }} {{ $s->unit }})@endif
                                         </option>
                                     @endforeach
                                 </select>
@@ -83,6 +83,7 @@
                                 <label>Jumlah <span class="js-unit muted"></span></label>
                                 <input type="number" name="items[{{ $i }}][qty]" class="js-qty" step="0.1" min="0.1" required value="{{ $item['qty'] ?? '' }}" inputmode="decimal">
                             </div>
+                            <div class="hint js-min-hint" style="grid-column: 1 / -1; margin-top: -4px"></div>
                             <div class="line-total js-line">Rp0</div>
                             <div><button type="button" class="btn btn-danger btn-sm js-remove" aria-label="Hapus baris" style="min-height: 44px">×</button></div>
                         </div>
@@ -157,10 +158,16 @@
             const opt = row.querySelector('.js-service').selectedOptions[0];
             const price = opt ? Number(opt.dataset.price) : 0;
             const unit = opt ? opt.dataset.unit : '';
+            const min = opt ? Number(opt.dataset.min) || 0 : 0;
             const q = parseFloat(row.querySelector('.js-qty').value) || 0;
+            const charged = q > 0 && min > 0 ? Math.max(q, min) : q;
+            const fmt = (n) => n.toLocaleString('id-ID');
             row.querySelector('.js-unit').textContent = unit ? '(' + unit + ')' : '';
-            row.querySelector('.js-line').textContent = rupiah(price * q);
-            total += Math.round(price * q);
+            row.querySelector('.js-line').textContent = rupiah(price * charged);
+            row.querySelector('.js-min-hint').textContent = (q > 0 && charged > q)
+                ? 'Di bawah minimum: ditagih ' + fmt(min) + ' ' + unit + ' = ' + rupiah(price * charged)
+                : (min > 0 ? 'Minimum ' + fmt(min) + ' ' + unit : '');
+            total += Math.round(price * charged);
             if (unit === 'kg') kg += q;
         });
         const discount = Math.min(Number(document.getElementById('discount').value) || 0, total);
@@ -180,6 +187,7 @@
         const first = itemsEl.querySelector('.item-row');
         const clone = first.cloneNode(true);
         clone.querySelector('.js-qty').value = '';
+        clone.querySelector('.js-min-hint').textContent = '';
         itemsEl.appendChild(clone);
         reindex();
         recalc();

@@ -17,8 +17,8 @@ class DatabaseSeeder extends Seeder
     {
         // Harga contoh. Ubah lewat menu Layanan sesuai harga sebenarnya.
         $services = [
-            ['name' => 'Cuci Gosok Reguler', 'category' => 'kiloan', 'unit' => 'kg', 'price' => 7000, 'duration_hours' => 48],
-            ['name' => 'Gosok Saja', 'category' => 'gosok', 'unit' => 'kg', 'price' => 4000, 'duration_hours' => 24],
+            ['name' => 'Cuci Gosok Reguler', 'category' => 'kiloan', 'unit' => 'kg', 'price' => 7000, 'min_qty' => 3, 'duration_hours' => 48],
+            ['name' => 'Gosok Saja', 'category' => 'gosok', 'unit' => 'kg', 'price' => 4000, 'min_qty' => 3, 'duration_hours' => 24],
             ['name' => 'Bed Cover', 'category' => 'premium', 'unit' => 'pcs', 'price' => 25000, 'duration_hours' => 72],
             ['name' => 'Jas / Blazer', 'category' => 'premium', 'unit' => 'pcs', 'price' => 30000, 'duration_hours' => 72],
             ['name' => 'Selimut', 'category' => 'satuan', 'unit' => 'pcs', 'price' => 20000, 'duration_hours' => 72],

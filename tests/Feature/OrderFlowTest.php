@@ -59,6 +59,64 @@ class OrderFlowTest extends TestCase
         $this->actingAs($this->kasir)->get(route('orders.receipt', $order))->assertOk()->assertSee('BELUM BAYAR');
     }
 
+    public function test_minimum_weight_is_charged_when_below_minimum(): void
+    {
+        $this->kiloan->update(['min_qty' => 3]);
+        $mitra = Mitra::create(['name' => 'Warung A', 'commission_type' => 'per_kg', 'commission_value' => 1000]);
+
+        // 2,5 kg -> ditagih 3 kg
+        $this->actingAs($this->kasir)->post(route('orders.store'), [
+            'customer_name' => 'Nia',
+            'customer_phone' => '081313148938',
+            'delivery_method' => 'ambil',
+            'mitra_id' => $mitra->id,
+            'items' => [['service_id' => $this->kiloan->id, 'qty' => '2.5']],
+        ])->assertSessionHasNoErrors();
+
+        $order = Order::latest('id')->first();
+        $item = $order->items->first();
+        $this->assertSame(21000, $order->total);              // 3 x 7.000
+        $this->assertEquals(2.5, (float) $order->total_kg);   // berat asli tetap tercatat
+        $this->assertEquals(3.0, (float) $item->charged_qty);
+        $this->assertTrue($item->usesMinimum());
+        $this->assertSame(3000, $order->commission_amount);  // komisi dari berat yang ditagih
+
+        $this->actingAs($this->kasir)->get(route('orders.receipt', $order))->assertOk()->assertSee('min. 3kg');
+
+        // 4 kg -> ditagih 4 kg (di atas minimum)
+        $this->actingAs($this->kasir)->post(route('orders.store'), [
+            'customer_name' => 'Nia',
+            'customer_phone' => '081313148938',
+            'delivery_method' => 'ambil',
+            'items' => [['service_id' => $this->kiloan->id, 'qty' => '4']],
+        ]);
+
+        $order = Order::latest('id')->first();
+        $this->assertSame(28000, $order->total);
+        $this->assertFalse($order->items->first()->usesMinimum());
+    }
+
+    public function test_admin_can_set_minimum_on_service(): void
+    {
+        $admin = User::create(['name' => 'Admin', 'email' => 'a@test.id', 'password' => 'rahasia123', 'role' => 'admin']);
+
+        $this->actingAs($admin)->put(route('services.update', $this->kiloan), [
+            'name' => 'Cuci Gosok', 'category' => 'kiloan', 'unit' => 'kg', 'price' => 7000,
+            'min_qty' => '3', 'duration_hours' => 48, 'active' => '1',
+        ])->assertSessionHasNoErrors();
+        $this->assertEquals(3.0, (float) $this->kiloan->fresh()->min_qty);
+
+        // Dikosongkan -> tanpa minimum
+        $this->actingAs($admin)->put(route('services.update', $this->kiloan), [
+            'name' => 'Cuci Gosok', 'category' => 'kiloan', 'unit' => 'kg', 'price' => 7000,
+            'min_qty' => '', 'duration_hours' => 48, 'active' => '1',
+        ]);
+        $this->assertNull($this->kiloan->fresh()->min_qty);
+
+        $this->actingAs($admin)->get(route('services.edit', $this->kiloan))->assertOk();
+        $this->actingAs($this->kasir)->get(route('orders.create'))->assertOk();
+    }
+
     public function test_percent_commission(): void
     {
         $mitra = Mitra::create(['name' => 'Toko B', 'commission_type' => 'percent', 'commission_value' => 10]);

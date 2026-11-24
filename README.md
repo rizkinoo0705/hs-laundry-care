@@ -20,6 +20,7 @@ Dibangun dengan **Laravel 12** + **PostgreSQL**, tanpa build front-end (cukup PH
 
 - **Stempel member**: member dapat 1 stempel saat order **selesai dan lunas** (sekali per order). Target & hadiah diatur di `.env` (`LAUNDRY_STAMP_TARGET`, `LAUNDRY_STAMP_REWARD`).
 - **Komisi mitra**: dihitung saat order dibuat (berat kg × tarif, atau % dari total). Komisi baru bisa **dicairkan** setelah order selesai dan lunas. Mengubah tarif mitra hanya berlaku untuk order baru.
+- **Berat minimum**: layanan bisa punya minimum (mis. kiloan 3 kg). Cucian 2,5 kg ditagih 3 kg; 4 kg ditagih 4 kg. Berat asli tetap tercatat; komisi mitra dihitung dari berat yang ditagih.
 - **Status order** hanya bisa maju (boleh melompat), atau dibatalkan.
 
 ## Menjalankan dengan Docker (paling mudah)

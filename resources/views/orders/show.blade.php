@@ -61,7 +61,8 @@
                     @foreach ($order->items as $item)
                         <tr>
                             <td>{{ $item->service_name }}</td>
-                            <td class="num">{{ qty($item->qty) }} {{ $item->unit }}</td>
+                            <td class="num">{{ qty($item->qty) }} {{ $item->unit }}
+                                @if ($item->usesMinimum())<br><span class="small muted">ditagih min. {{ qty($item->charged_qty) }} {{ $item->unit }}</span>@endif</td>
                             <td class="num">{{ rupiah($item->price) }}</td>
                             <td class="num">{{ rupiah($item->subtotal) }}</td>
                         </tr>
