@@ -63,8 +63,8 @@ class DeliveryScheduleTest extends TestCase
         $this->assertSame('Jl. Melati 1', $d->address);
 
         // Tidak boleh dobel, dan hilang dari daftar
-        $this->schedule(['type' => 'antar', 'order_id' => $ready->id])->assertSessionHasErrors('order_id');
         $this->actingAs($this->admin)->get(route('deliveries.create'))->assertDontSee('HS-SIAP-ANTAR');
+        $this->schedule(['type' => 'antar', 'order_id' => $ready->id])->assertSessionHasErrors('order_id');
 
         // Jemput tetap boleh tanpa order
         $this->schedule(['type' => 'jemput', 'customer_id' => $budi->id])->assertSessionHasNoErrors()->assertRedirect();
