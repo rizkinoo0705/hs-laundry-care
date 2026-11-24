@@ -12,7 +12,7 @@ Dibangun dengan **Laravel 12** + **PostgreSQL**, tanpa build front-end (cukup PH
 | **Kasir & order** | Input order kiloan/satuan/premium/gosok, diskon, bayar sekarang/nanti, status (Diterima → Dicuci → Disetrika → Siap → Selesai), nota printer 58 mm, tombol kirim status ke WhatsApp pelanggan |
 | **Pelanggan & member** | Pelanggan otomatis dibuat dari nomor HP saat order, kode member `HS-M0001`, kartu 10 stempel, tukar hadiah, riwayat stempel |
 | **Mitra dropbox** | Data outlet mitra, komisi per kg (mis. Rp1.000/kg) atau persen, komisi dihitung otomatis per order, pencairan komisi tercatat |
-| **Antar-jemput** | Jadwal jemput/antar ke pelanggan atau mitra, petugas, status perjalanan |
+| **Antar-jemput** | Peta lokasi outlet & rumah pelanggan (OpenStreetMap, gratis), jarak lewat jalan, tarif per zona jarak, ongkir per perjalanan (jemput/antar) masuk ke tagihan, promo ongkir per pelanggan, gratis ongkir minimal belanja / member, jadwal & link rute Google Maps untuk kurir |
 | **Laporan** | Omzet, uang masuk, piutang, per hari, per layanan, per mitra |
 | **Pengguna** | Admin/pemilik (akses penuh), Kasir (order, pelanggan, antar-jemput), Mitra (portal: cucian & komisi miliknya saja) |
 
@@ -21,6 +21,7 @@ Dibangun dengan **Laravel 12** + **PostgreSQL**, tanpa build front-end (cukup PH
 - **Stempel member**: member dapat 1 stempel saat order **selesai dan lunas** (sekali per order). Target & hadiah diatur di `.env` (`LAUNDRY_STAMP_TARGET`, `LAUNDRY_STAMP_REWARD`).
 - **Komisi mitra**: dihitung saat order dibuat (berat kg × tarif, atau % dari total). Komisi baru bisa **dicairkan** setelah order selesai dan lunas. Mengubah tarif mitra hanya berlaku untuk order baru.
 - **Berat minimum**: layanan bisa punya minimum (mis. kiloan 3 kg). Cucian 2,5 kg ditagih 3 kg; 4 kg ditagih 4 kg. Berat asli tetap tercatat; komisi mitra dihitung dari berat yang ditagih.
+- **Ongkir**: jarak pelanggan → zona (menu *Zona & Ongkir*) → tarif × jumlah perjalanan. Jika beberapa promo berlaku, dipakai potongan terbesar. Di luar zona / tanpa titik lokasi → ongkir diisi manual.
 - **Status order** hanya bisa maju (boleh melompat), atau dibatalkan.
 
 ## Menjalankan dengan Docker (paling mudah)
