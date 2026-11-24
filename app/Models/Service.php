@@ -19,15 +19,16 @@ class Service extends Model
         'pcs' => 'pcs',
     ];
 
-    protected $attributes = ['duration_hours' => 48, 'active' => true];
+    protected $attributes = ['duration_hours' => 48, 'active' => true, 'staff_commission' => 0];
 
-    protected $fillable = ['name', 'category', 'unit', 'price', 'min_qty', 'duration_hours', 'active'];
+    protected $fillable = ['name', 'category', 'unit', 'price', 'min_qty', 'staff_commission', 'duration_hours', 'active'];
 
     protected function casts(): array
     {
         return [
             'price' => 'integer',
             'min_qty' => 'decimal:2',
+            'staff_commission' => 'integer',
             'duration_hours' => 'integer',
             'active' => 'boolean',
         ];

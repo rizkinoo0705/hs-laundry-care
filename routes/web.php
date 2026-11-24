@@ -10,6 +10,7 @@ use App\Http\Controllers\MitraController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\StaffController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -30,6 +31,7 @@ Route::middleware('auth')->group(function () {
         Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
         Route::patch('orders/{order}/pay', [OrderController::class, 'pay'])->name('orders.pay');
         Route::get('orders/{order}/receipt', [OrderController::class, 'receipt'])->name('orders.receipt');
+        Route::patch('orders/{order}/staff', [OrderController::class, 'assignStaff'])->name('orders.staff');
 
         Route::resource('customers', CustomerController::class)->except(['destroy']);
         Route::post('customers/{customer}/redeem', [CustomerController::class, 'redeem'])->name('customers.redeem');
@@ -44,6 +46,9 @@ Route::middleware('auth')->group(function () {
         Route::resource('mitras', MitraController::class)->except(['destroy']);
         Route::post('mitras/{mitra}/payout', [MitraController::class, 'payout'])->name('mitras.payout');
         Route::resource('users', UserController::class)->except(['show', 'destroy']);
+        Route::put('staff/rates', [StaffController::class, 'updateRates'])->name('staff.rates');
+        Route::resource('staff', StaffController::class)->except(['destroy'])->parameters(['staff' => 'staff']);
+        Route::post('staff/{staff}/payout', [StaffController::class, 'payout'])->name('staff.payout');
         Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
         Route::get('settings/delivery', [DeliverySettingsController::class, 'edit'])->name('settings.delivery');
         Route::put('settings/delivery', [DeliverySettingsController::class, 'update'])->name('settings.delivery.update');

@@ -14,6 +14,7 @@ Dibangun dengan **Laravel 12** + **PostgreSQL**, tanpa build front-end (cukup PH
 | **Mitra dropbox** | Data outlet mitra, komisi per kg (mis. Rp1.000/kg) atau persen, komisi dihitung otomatis per order, pencairan komisi tercatat |
 | **Antar-jemput** | Peta lokasi outlet & rumah pelanggan (OpenStreetMap, gratis), jarak lewat jalan, tarif per zona jarak, ongkir per perjalanan (jemput/antar) masuk ke tagihan, promo ongkir per pelanggan, gratis ongkir minimal belanja / member, jadwal & link rute Google Maps untuk kurir |
 | **Laporan** | Omzet, uang masuk, piutang, per hari, per layanan, per mitra |
+| **Petugas & komisi** | Daftar petugas (produksi/kurir), komisi pengerjaan per kg/pcs per layanan (mis. reguler Rp500, express Rp1.000), komisi per jemput/antar untuk kurir, rekap per periode, catat pembayaran komisi |
 | **Pengguna** | Admin/pemilik (akses penuh), Kasir (order, pelanggan, antar-jemput), Mitra (portal: cucian & komisi miliknya saja) |
 
 ### Aturan bisnis

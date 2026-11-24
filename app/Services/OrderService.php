@@ -13,7 +13,11 @@ use Illuminate\Validation\ValidationException;
 
 class OrderService
 {
-    public function __construct(private StampService $stamps, private DeliveryFeeService $fees)
+    public function __construct(
+        private StampService $stamps,
+        private DeliveryFeeService $fees,
+        private StaffCommissionService $staffCommissions,
+    )
     {
     }
 
@@ -90,6 +94,7 @@ class OrderService
                 'customer_id' => $customer->id,
                 'mitra_id' => $mitra?->id,
                 'user_id' => $user?->id,
+                'staff_id' => $data['staff_id'] ?? null,
                 'status' => 'diterima',
                 'delivery_method' => $deliveryMethod,
                 'pickup' => $pickup,
@@ -135,6 +140,7 @@ class OrderService
             $order->save();
 
             $this->maybeAwardStamp($order, $user);
+            $this->staffCommissions->recordForOrder($order);
 
             return $order;
         });
@@ -154,6 +160,7 @@ class OrderService
             ]);
 
             $this->maybeAwardStamp($order, $user);
+            $this->staffCommissions->recordForOrder($order);
 
             return $order;
         });

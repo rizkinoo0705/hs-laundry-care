@@ -104,6 +104,40 @@
         </div>
 
         <div class="card">
+            <h2>Petugas</h2>
+            @if (! $order->isClosed())
+                <form method="POST" action="{{ route('orders.staff', $order) }}" class="inline-form">
+                    @csrf @method('PATCH')
+                    <select name="staff_id" aria-label="Petugas pengerjaan">
+                        <option value="">Belum ditentukan</option>
+                        @foreach ($staff as $st)
+                            <option value="{{ $st->id }}" @selected($order->staff_id === $st->id)>{{ $st->name }}</option>
+                        @endforeach
+                    </select>
+                    <button type="submit" class="btn btn-outline btn-sm">Simpan</button>
+                </form>
+            @else
+                <p>{{ $order->staff?->name ?? 'Tidak ada petugas' }}</p>
+            @endif
+            @if ($order->staffCommissions->isNotEmpty())
+                <div class="table-wrap" style="margin-top: 10px">
+                    <table>
+                        <tbody>
+                        @foreach ($order->staffCommissions as $sc)
+                            <tr>
+                                <td>{{ $sc->staff->name }}<br><span class="small muted">{{ $sc->typeLabel() }} · {{ qty($sc->qty) }} × {{ rupiah($sc->rate) }}</span></td>
+                                <td class="num">{{ rupiah($sc->amount) }}</td>
+                            </tr>
+                        @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @elseif ($order->staff_id)
+                <p class="small muted" style="margin-top: 8px">Komisi tercatat saat order selesai dan lunas.</p>
+            @endif
+        </div>
+
+        <div class="card">
             <h2>Info order</h2>
             <dl class="info">
                 <dt>Antar-jemput</dt><dd>{{ $order->delivery_trips > 0 || $order->pickup || $order->delivery_method === 'antar' ? $order->tripsLabel() : 'Tidak (datang & ambil sendiri)' }}@if ($order->distance_km !== null) · {{ qty($order->distance_km) }} km @endif</dd>

@@ -42,6 +42,11 @@
                 <div class="hint">Mis. 3: cucian 2,5 kg ditagih 3 kg; 4 kg ditagih 4 kg.</div>
             </div>
             <div class="field">
+                <label for="staff_commission">Komisi petugas (Rp per <span class="js-unit-label">{{ old('unit', $service->unit) ?: 'kg' }}</span>)</label>
+                <input type="number" id="staff_commission" name="staff_commission" min="0" step="100" value="{{ old('staff_commission', $service->staff_commission ?: '') }}" inputmode="numeric" placeholder="Mis. 500">
+                <div class="hint">Untuk petugas yang mengerjakan order. 5 kg × Rp500 = Rp2.500.</div>
+            </div>
+            <div class="field">
                 <label for="duration_hours">Estimasi selesai (jam)</label>
                 <input type="number" id="duration_hours" name="duration_hours" min="1" required value="{{ old('duration_hours', $service->duration_hours) }}" inputmode="numeric">
             </div>
@@ -60,6 +65,7 @@
 <script>
 document.getElementById('unit').addEventListener('change', function () {
     document.getElementById('min-unit').textContent = this.value;
+    document.querySelectorAll('.js-unit-label').forEach((el) => el.textContent = this.value);
 });
 </script>
 @endpush

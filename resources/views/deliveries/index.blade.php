@@ -48,7 +48,7 @@
                     </td>
                     <td data-label="Order">@if ($delivery->order)<a href="{{ route('orders.show', $delivery->order) }}">{{ $delivery->order->code }}</a>@else - @endif</td>
                     <td data-label="Status"><span class="badge badge-{{ $delivery->status }}">{{ $delivery->statusLabel() }}</span>
-                        @if ($delivery->courier)<br><span class="small muted">{{ $delivery->courier->name }}</span>@endif</td>
+                        @if ($delivery->staff)<br><span class="small muted">Kurir: {{ $delivery->staff->name }}</span>@endif</td>
                     <td data-label="Ubah">
                         <form method="POST" action="{{ route('deliveries.status', $delivery) }}" class="inline-form">
                             @csrf @method('PATCH')
@@ -57,10 +57,10 @@
                                     <option value="{{ $key }}" @selected($delivery->status === $key)>{{ $label }}</option>
                                 @endforeach
                             </select>
-                            <select name="courier_id" aria-label="Petugas">
-                                <option value="">Petugas</option>
+                            <select name="staff_id" aria-label="Kurir">
+                                <option value="">Pilih kurir</option>
                                 @foreach ($couriers as $c)
-                                    <option value="{{ $c->id }}" @selected($delivery->courier_id === $c->id)>{{ $c->name }}</option>
+                                    <option value="{{ $c->id }}" @selected($delivery->staff_id === $c->id)>{{ $c->name }}</option>
                                 @endforeach
                             </select>
                             <button type="submit" class="btn btn-sm">Simpan</button>

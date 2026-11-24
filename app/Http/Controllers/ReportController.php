@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Mitra;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\StaffCommission;
 use Illuminate\Http\Request;
 
 class ReportController extends Controller
@@ -53,7 +54,22 @@ class ReportController extends Controller
             ];
         })->filter(fn ($row) => $row['orders'] > 0)->values();
 
+        $byStaff = StaffCommission::with('staff')
+            ->whereBetween('earned_at', [$from, $to])
+            ->get()
+            ->groupBy('staff_id')
+            ->map(fn ($rows) => [
+                'staff' => $rows->first()->staff,
+                'layanan' => (int) $rows->where('type', 'layanan')->sum('amount'),
+                'trips' => $rows->whereIn('type', ['jemput', 'antar'])->count(),
+                'trip_amount' => (int) $rows->whereIn('type', ['jemput', 'antar'])->sum('amount'),
+                'total' => (int) $rows->sum('amount'),
+            ])
+            ->sortByDesc('total')
+            ->values();
+
         return view('reports.index', [
+            'byStaff' => $byStaff,
             'from' => $from,
             'to' => $to,
             'summary' => [

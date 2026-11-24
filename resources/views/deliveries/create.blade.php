@@ -64,13 +64,14 @@
         </div>
 
         <div class="field">
-            <label for="courier_id">Petugas</label>
-            <select id="courier_id" name="courier_id">
+            <label for="staff_id">Kurir</label>
+            <select id="staff_id" name="staff_id">
                 <option value="">Belum ditentukan</option>
                 @foreach ($couriers as $c)
-                    <option value="{{ $c->id }}" @selected((string) old('courier_id') === (string) $c->id)>{{ $c->name }}</option>
+                    <option value="{{ $c->id }}" @selected((string) old('staff_id') === (string) $c->id)>{{ $c->name }}</option>
                 @endforeach
             </select>
+            <div class="hint">Komisi jemput/antar masuk ke kurir ini saat jadwal ditandai selesai.</div>
         </div>
 
         <div class="field">

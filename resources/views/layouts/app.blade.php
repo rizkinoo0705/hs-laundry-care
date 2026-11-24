@@ -39,6 +39,7 @@
             @if ($user->isAdmin())
                 <span class="nav-label">Admin</span>
                 <a href="{{ route('mitras.index') }}" @class(['active' => request()->routeIs('mitras.*')])>Mitra Dropbox</a>
+                <a href="{{ route('staff.index') }}" @class(['active' => request()->routeIs('staff.*')])>Petugas &amp; Komisi</a>
                 <a href="{{ route('reports.index') }}" @class(['active' => request()->routeIs('reports.*')])>Laporan</a>
                 <a href="{{ route('services.index') }}" @class(['active' => request()->routeIs('services.*')])>Layanan &amp; Harga</a>
                 <a href="{{ route('settings.delivery') }}" @class(['active' => request()->routeIs('settings.delivery*')])>Zona &amp; Ongkir</a>

@@ -98,6 +98,27 @@
         </div>
 
         <div class="card">
+            <h2>Komisi petugas</h2>
+            <div class="table-wrap">
+                <table class="rtable">
+                    <thead><tr><th>Petugas</th><th class="num">Pengerjaan</th><th class="num">Jemput/antar</th><th class="num">Total</th></tr></thead>
+                    <tbody>
+                    @forelse ($byStaff as $row)
+                        <tr>
+                            <td data-label="Petugas"><a href="{{ route('staff.show', $row['staff']) }}">{{ $row['staff']->name }}</a></td>
+                            <td data-label="Pengerjaan" class="num">{{ rupiah($row['layanan']) }}</td>
+                            <td data-label="Jemput/antar" class="num">{{ rupiah($row['trip_amount']) }} <span class="small muted">({{ $row['trips'] }}×)</span></td>
+                            <td data-label="Total" class="num strong">{{ rupiah($row['total']) }}</td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="4" class="empty">Belum ada komisi petugas.</td></tr>
+                    @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
             <h2>Per mitra dropbox</h2>
             <div class="table-wrap">
                 <table class="rtable">

@@ -70,6 +70,16 @@
                     <div class="hint">Komisi mitra dihitung otomatis dari order ini.</div>
                 </div>
                 <div class="field">
+                    <label for="staff_id">Petugas pengerjaan</label>
+                    <select id="staff_id" name="staff_id">
+                        <option value="">Belum ditentukan</option>
+                        @foreach ($staff as $st)
+                            <option value="{{ $st->id }}" @selected((string) old('staff_id') === (string) $st->id)>{{ $st->name }}</option>
+                        @endforeach
+                    </select>
+                    <div class="hint">Mendapat komisi per kg/pcs saat order selesai dan lunas.</div>
+                </div>
+                <div class="field">
                     <label for="notes">Catatan</label>
                     <textarea id="notes" name="notes" rows="2" placeholder="Mis. pisahkan baju putih, jangan pakai pewangi">{{ old('notes') }}</textarea>
                 </div>

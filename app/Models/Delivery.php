@@ -23,7 +23,7 @@ class Delivery extends Model
 
     protected $fillable = [
         'type', 'customer_id', 'order_id', 'mitra_id', 'address', 'latitude', 'longitude', 'distance_km',
-        'scheduled_at', 'courier_id', 'status', 'notes', 'completed_at',
+        'scheduled_at', 'courier_id', 'staff_id', 'status', 'notes', 'completed_at',
     ];
 
     protected function casts(): array
@@ -50,6 +50,11 @@ class Delivery extends Model
     public function mitra(): BelongsTo
     {
         return $this->belongsTo(Mitra::class);
+    }
+
+    public function staff(): BelongsTo
+    {
+        return $this->belongsTo(Staff::class);
     }
 
     public function courier(): BelongsTo

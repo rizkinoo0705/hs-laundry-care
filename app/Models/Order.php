@@ -47,7 +47,7 @@ class Order extends Model
     ];
 
     protected $fillable = [
-        'code', 'customer_id', 'mitra_id', 'user_id', 'status', 'delivery_method',
+        'code', 'customer_id', 'mitra_id', 'user_id', 'staff_id', 'status', 'delivery_method',
         'subtotal', 'discount', 'total', 'total_kg', 'payment_status', 'payment_method',
         'paid_at', 'due_at', 'completed_at', 'notes', 'stamp_awarded',
         'commission_amount', 'mitra_payout_id',
@@ -93,6 +93,16 @@ class Order extends Model
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function staff(): BelongsTo
+    {
+        return $this->belongsTo(Staff::class);
+    }
+
+    public function staffCommissions(): HasMany
+    {
+        return $this->hasMany(StaffCommission::class);
     }
 
     public function zone(): BelongsTo

@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\Mitra;
 use App\Models\Order;
 use App\Models\Service;
+use App\Models\Staff;
 use App\Services\DeliveryFeeService;
 use App\Services\OrderService;
 use App\Support\Phone;
@@ -53,6 +54,7 @@ class OrderController extends Controller
         return view('orders.create', [
             'services' => Service::active()->orderBy('category')->orderBy('name')->get(),
             'mitras' => Mitra::where('active', true)->orderBy('name')->get(),
+            'staff' => Staff::active()->get(),
             'customers' => Customer::orderBy('name')->get(['id', 'name', 'phone', 'address']),
             'selectedCustomer' => $request->query('customer') ? Customer::find($request->query('customer')) : null,
         ]);
@@ -72,6 +74,7 @@ class OrderController extends Controller
             'customer_phone' => ['required', 'string', 'regex:/^0[0-9]{8,14}$/'],
             'customer_address' => ['nullable', 'string', 'max:500'],
             'mitra_id' => ['nullable', Rule::exists('mitras', 'id')],
+            'staff_id' => ['nullable', Rule::exists('staff', 'id')],
             'delivery_method' => ['required', Rule::in(array_keys(Order::DELIVERY_METHODS))],
             'pickup' => ['nullable', 'boolean'],
             'manual_delivery_fee' => ['nullable', 'integer', 'min:0', 'max:1000000'],
@@ -124,9 +127,23 @@ class OrderController extends Controller
 
     public function show(Order $order)
     {
-        $order->load('items', 'customer', 'mitra', 'cashier', 'payout', 'zone');
+        $order->load('items', 'customer', 'mitra', 'cashier', 'payout', 'zone', 'staff', 'staffCommissions.staff');
 
-        return view('orders.show', compact('order'));
+        return view('orders.show', ['order' => $order, 'staff' => Staff::active()->get()]);
+    }
+
+    /** Ganti petugas pengerjaan (selama order belum selesai). */
+    public function assignStaff(Request $request, Order $order)
+    {
+        $data = $request->validate(['staff_id' => ['nullable', Rule::exists('staff', 'id')]]);
+
+        if ($order->isClosed()) {
+            return back()->withErrors(['staff_id' => 'Order sudah selesai/batal, petugas tidak bisa diganti.']);
+        }
+
+        $order->update(['staff_id' => $data['staff_id'] ?? null]);
+
+        return back()->with('success', 'Petugas pengerjaan disimpan.');
     }
 
     public function updateStatus(Request $request, Order $order)

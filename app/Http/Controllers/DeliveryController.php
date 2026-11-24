@@ -6,7 +6,8 @@ use App\Models\Customer;
 use App\Models\Delivery;
 use App\Models\Mitra;
 use App\Models\Order;
-use App\Models\User;
+use App\Models\Staff;
+use App\Services\StaffCommissionService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -16,7 +17,7 @@ class DeliveryController extends Controller
     {
         $date = $request->date('date') ?? now();
 
-        $query = Delivery::with('customer', 'mitra', 'order', 'courier')
+        $query = Delivery::with('customer', 'mitra', 'order', 'staff')
             ->whereDate('scheduled_at', $date->toDateString())
             ->orderBy('scheduled_at');
 
@@ -27,7 +28,7 @@ class DeliveryController extends Controller
         return view('deliveries.index', [
             'deliveries' => $query->get(),
             'date' => $date,
-            'couriers' => User::whereIn('role', ['admin', 'kasir'])->where('active', true)->orderBy('name')->get(),
+            'couriers' => Staff::active()->get(),
         ]);
     }
 
@@ -39,7 +40,7 @@ class DeliveryController extends Controller
             'order' => $order,
             'customers' => Customer::orderBy('name')->get(['id', 'name', 'phone', 'address']),
             'mitras' => Mitra::where('active', true)->orderBy('name')->get(),
-            'couriers' => User::whereIn('role', ['admin', 'kasir'])->where('active', true)->orderBy('name')->get(),
+            'couriers' => Staff::active()->get(),
         ]);
     }
 
@@ -53,7 +54,7 @@ class DeliveryController extends Controller
             'order_id' => ['nullable', Rule::exists('orders', 'id')],
             'address' => ['nullable', 'string', 'max:500'],
             'scheduled_at' => ['required', 'date'],
-            'courier_id' => ['nullable', Rule::exists('users', 'id')],
+            'staff_id' => ['nullable', Rule::exists('staff', 'id')],
             'notes' => ['nullable', 'string', 'max:500'],
         ], [
             'customer_id.required_if' => 'Pilih pelanggan.',
@@ -89,19 +90,26 @@ class DeliveryController extends Controller
             ->with('success', 'Jadwal '.strtolower($delivery->typeLabel()).' dibuat.');
     }
 
-    public function updateStatus(Request $request, Delivery $delivery)
+    public function updateStatus(Request $request, Delivery $delivery, StaffCommissionService $commissions)
     {
         $data = $request->validate([
             'status' => ['required', Rule::in(array_keys(Delivery::STATUSES))],
-            'courier_id' => ['nullable', Rule::exists('users', 'id')],
+            'staff_id' => ['nullable', Rule::exists('staff', 'id')],
         ]);
 
-        $delivery->status = $data['status'];
-        if (array_key_exists('courier_id', $data) && $data['courier_id']) {
-            $delivery->courier_id = $data['courier_id'];
+        if ($data['status'] === 'selesai' && empty($data['staff_id']) && ! $delivery->staff_id
+            && StaffCommissionService::tripRate($delivery->type) > 0) {
+            return back()->withErrors(['staff_id' => 'Pilih kurir sebelum menandai selesai, agar komisinya tercatat.']);
         }
-        $delivery->completed_at = $data['status'] === 'selesai' ? now() : null;
+
+        $delivery->status = $data['status'];
+        if (! empty($data['staff_id'])) {
+            $delivery->staff_id = $data['staff_id'];
+        }
+        $delivery->completed_at = $data['status'] === 'selesai' ? ($delivery->completed_at ?? now()) : null;
         $delivery->save();
+
+        $commissions->syncForDelivery($delivery);
 
         return back()->with('success', 'Status antar-jemput diperbarui.');
     }
