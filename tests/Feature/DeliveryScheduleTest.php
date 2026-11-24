@@ -27,7 +27,7 @@ class DeliveryScheduleTest extends TestCase
             'pickup' => $pickup, 'subtotal' => 21000, 'total' => 21000]);
     }
 
-    private function post(array $data)
+    private function schedule(array $data)
     {
         return $this->actingAs($this->admin)->post(route('deliveries.store'), $data + [
             'target' => 'customer', 'scheduled_at' => now()->addHour()->format('Y-m-d H:i'),
@@ -50,24 +50,24 @@ class DeliveryScheduleTest extends TestCase
             ->assertDontSee('HS-SIAP-AMBIL')->assertDontSee('HS-PROSES-ANTAR');
 
         // Antar tanpa order / order tidak memenuhi syarat -> ditolak
-        $this->post(['type' => 'antar', 'customer_id' => $nia->id])->assertSessionHasErrors('order_id');
-        $this->post(['type' => 'antar', 'order_id' => $ambil->id])->assertSessionHasErrors('order_id');
-        $this->post(['type' => 'antar', 'order_id' => $proses->id])->assertSessionHasErrors('order_id');
+        $this->schedule(['type' => 'antar', 'customer_id' => $nia->id])->assertSessionHasErrors('order_id');
+        $this->schedule(['type' => 'antar', 'order_id' => $ambil->id])->assertSessionHasErrors('order_id');
+        $this->schedule(['type' => 'antar', 'order_id' => $proses->id])->assertSessionHasErrors('order_id');
         $this->assertSame(0, Delivery::count());
 
         // Order siap + layanan antar -> berhasil, pelanggan dari order
-        $this->post(['type' => 'antar', 'order_id' => $ready->id, 'customer_id' => $budi->id])
+        $this->schedule(['type' => 'antar', 'order_id' => $ready->id, 'customer_id' => $budi->id])
             ->assertSessionHasNoErrors()->assertRedirect();
         $d = Delivery::first();
         $this->assertSame($nia->id, $d->customer_id);
         $this->assertSame('Jl. Melati 1', $d->address);
 
         // Tidak boleh dobel, dan hilang dari daftar
-        $this->post(['type' => 'antar', 'order_id' => $ready->id])->assertSessionHasErrors('order_id');
+        $this->schedule(['type' => 'antar', 'order_id' => $ready->id])->assertSessionHasErrors('order_id');
         $this->actingAs($this->admin)->get(route('deliveries.create'))->assertDontSee('HS-SIAP-ANTAR');
 
         // Jemput tetap boleh tanpa order
-        $this->post(['type' => 'jemput', 'customer_id' => $budi->id])->assertSessionHasNoErrors()->assertRedirect();
+        $this->schedule(['type' => 'jemput', 'customer_id' => $budi->id])->assertSessionHasNoErrors()->assertRedirect();
         $this->assertSame(2, Delivery::count());
 
         $this->actingAs($this->admin)->get(route('deliveries.index', ['date' => now()->addHour()->toDateString()]))
