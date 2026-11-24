@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
+use App\Models\DeliveryZone;
+use App\Models\Setting;
+use App\Support\Geo;
 use App\Services\StampService;
 use App\Support\Phone;
 use Illuminate\Http\Request;
@@ -36,7 +39,7 @@ class CustomerController extends Controller
 
     public function create()
     {
-        return view('customers.form', ['customer' => new Customer]);
+        return view('customers.form', ['customer' => new Customer, 'outlet' => Setting::outletLocation()]);
     }
 
     public function store(Request $request)
@@ -48,8 +51,12 @@ class CustomerController extends Controller
 
     public function show(Customer $customer)
     {
+        $distance = $customer->distance_km !== null ? (float) $customer->distance_km : $customer->straightLineKm();
+
         return view('customers.show', [
             'customer' => $customer,
+            'distance' => $distance,
+            'zone' => $distance !== null ? DeliveryZone::forDistance($distance) : null,
             'orders' => $customer->orders()->latest()->limit(20)->get(),
             'stampLogs' => $customer->stampTransactions()->latest()->limit(20)->get(),
         ]);
@@ -57,7 +64,7 @@ class CustomerController extends Controller
 
     public function edit(Customer $customer)
     {
-        return view('customers.form', compact('customer'));
+        return view('customers.form', ['customer' => $customer, 'outlet' => Setting::outletLocation()]);
     }
 
     public function update(Request $request, Customer $customer)
@@ -84,12 +91,48 @@ class CustomerController extends Controller
             'address' => ['nullable', 'string', 'max:500'],
             'is_member' => ['nullable', 'boolean'],
             'notes' => ['nullable', 'string', 'max:500'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90', 'required_with:longitude'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180', 'required_with:latitude'],
+            'road_distance_km' => ['nullable', 'numeric', 'min:0', 'max:500'],
+            'delivery_promo' => ['nullable', Rule::in(array_keys(Customer::DELIVERY_PROMOS))],
+            'delivery_promo_value' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'delivery_promo_until' => ['nullable', 'date'],
         ], [
             'phone.unique' => 'Nomor HP ini sudah terdaftar.',
         ]);
 
         $data['is_member'] = $request->boolean('is_member');
+        $data['delivery_promo'] = $data['delivery_promo'] ?? 'none';
+        $data['delivery_promo_value'] = $data['delivery_promo'] === 'percent' ? (int) ($data['delivery_promo_value'] ?? 0) : 0;
+        if ($data['delivery_promo'] === 'none') {
+            $data['delivery_promo_until'] = null;
+        }
+
+        [$data['distance_km'], $data['distance_source']] = $this->distance($data);
+        unset($data['road_distance_km']);
 
         return $data;
+    }
+
+    /**
+     * Jarak dari outlet. Pakai jarak jalan dari peta bila masuk akal,
+     * selain itu jarak garis lurus.
+     */
+    private function distance(array $data): array
+    {
+        $outlet = Setting::outletLocation();
+
+        if (! $outlet || ! isset($data['latitude'], $data['longitude'])) {
+            return [null, null];
+        }
+
+        $straight = Geo::haversineKm($outlet[0], $outlet[1], (float) $data['latitude'], (float) $data['longitude']);
+        $road = isset($data['road_distance_km']) ? (float) $data['road_distance_km'] : null;
+
+        if ($road !== null && $road >= $straight * 0.9 && $road <= $straight * 6 + 1) {
+            return [round($road, 2), 'jalan'];
+        }
+
+        return [round($straight, 2), 'lurus'];
     }
 }

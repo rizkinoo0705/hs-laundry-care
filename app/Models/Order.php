@@ -35,6 +35,7 @@ class Order extends Model
     protected $attributes = [
         'status' => 'diterima', 'delivery_method' => 'ambil', 'subtotal' => 0, 'discount' => 0,
         'total' => 0, 'total_kg' => 0, 'payment_status' => 'belum', 'stamp_awarded' => false, 'commission_amount' => 0,
+        'pickup' => false, 'delivery_trips' => 0, 'delivery_fee' => 0, 'delivery_discount' => 0,
     ];
 
     protected $fillable = [
@@ -42,6 +43,8 @@ class Order extends Model
         'subtotal', 'discount', 'total', 'total_kg', 'payment_status', 'payment_method',
         'paid_at', 'due_at', 'completed_at', 'notes', 'stamp_awarded',
         'commission_amount', 'mitra_payout_id',
+        'pickup', 'distance_km', 'delivery_zone_id', 'delivery_trips',
+        'delivery_fee', 'delivery_discount', 'delivery_note',
     ];
 
     protected function casts(): array
@@ -56,6 +59,11 @@ class Order extends Model
             'total' => 'integer',
             'commission_amount' => 'integer',
             'total_kg' => 'decimal:2',
+            'pickup' => 'boolean',
+            'distance_km' => 'decimal:2',
+            'delivery_trips' => 'integer',
+            'delivery_fee' => 'integer',
+            'delivery_discount' => 'integer',
         ];
     }
 
@@ -77,6 +85,35 @@ class Order extends Model
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function zone(): BelongsTo
+    {
+        return $this->belongsTo(DeliveryZone::class, 'delivery_zone_id');
+    }
+
+    /** Total cucian saja (tanpa ongkir). */
+    public function laundryTotal(): int
+    {
+        return $this->subtotal - $this->discount;
+    }
+
+    public function deliveryNet(): int
+    {
+        return $this->delivery_fee - $this->delivery_discount;
+    }
+
+    public function tripsLabel(): string
+    {
+        $parts = [];
+        if ($this->pickup) {
+            $parts[] = 'jemput';
+        }
+        if ($this->delivery_method === 'antar') {
+            $parts[] = 'antar';
+        }
+
+        return $parts ? ucfirst(implode(' + ', $parts)) : '-';
     }
 
     public function payout(): BelongsTo

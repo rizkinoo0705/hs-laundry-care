@@ -27,7 +27,7 @@
 
 <div class="grid grid-4" style="margin-bottom: 16px">
     <div class="stat">
-        <div class="stat-label">Omzet (order masuk)</div>
+        <div class="stat-label">Omzet (termasuk ongkir)</div>
         <div class="stat-value">{{ rupiah($summary['omzet']) }}</div>
         <div class="stat-note">{{ $summary['orders'] }} order · {{ qty($summary['kg']) }} kg</div>
     </div>
@@ -40,6 +40,11 @@
         <div class="stat-label">Belum dibayar</div>
         <div class="stat-value">{{ rupiah($summary['unpaid']) }}</div>
         <div class="stat-note">diskon diberikan {{ rupiah($summary['discount']) }}</div>
+    </div>
+    <div class="stat">
+        <div class="stat-label">Ongkir antar-jemput</div>
+        <div class="stat-value">{{ rupiah($summary['delivery_fee'] - $summary['delivery_discount']) }}</div>
+        <div class="stat-note">{{ $summary['delivery_trips'] }} perjalanan · promo {{ rupiah($summary['delivery_discount']) }}</div>
     </div>
     <div class="stat">
         <div class="stat-label">Komisi mitra</div>

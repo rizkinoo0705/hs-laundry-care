@@ -22,7 +22,7 @@ class Delivery extends Model
     protected $attributes = ['status' => 'terjadwal'];
 
     protected $fillable = [
-        'type', 'customer_id', 'order_id', 'mitra_id', 'address',
+        'type', 'customer_id', 'order_id', 'mitra_id', 'address', 'latitude', 'longitude', 'distance_km',
         'scheduled_at', 'courier_id', 'status', 'notes', 'completed_at',
     ];
 
@@ -31,6 +31,9 @@ class Delivery extends Model
         return [
             'scheduled_at' => 'datetime',
             'completed_at' => 'datetime',
+            'latitude' => 'float',
+            'longitude' => 'float',
+            'distance_km' => 'decimal:2',
         ];
     }
 
@@ -68,6 +71,11 @@ class Delivery extends Model
     public function targetName(): string
     {
         return $this->customer?->name ?? $this->mitra?->name ?? '-';
+    }
+
+    public function directionsUrl(): ?string
+    {
+        return \App\Support\Geo::directionsUrl($this->latitude, $this->longitude, $this->address);
     }
 
     public function targetPhone(): ?string

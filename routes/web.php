@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeliveryController;
+use App\Http\Controllers\DeliverySettingsController;
 use App\Http\Controllers\Mitra\PortalController;
 use App\Http\Controllers\MitraController;
 use App\Http\Controllers\OrderController;
@@ -24,6 +25,7 @@ Route::middleware('auth')->group(function () {
 
     // Admin & kasir
     Route::middleware('role:admin,kasir')->group(function () {
+        Route::get('orders/quote', [OrderController::class, 'quote'])->name('orders.quote');
         Route::resource('orders', OrderController::class)->only(['index', 'create', 'store', 'show']);
         Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
         Route::patch('orders/{order}/pay', [OrderController::class, 'pay'])->name('orders.pay');
@@ -43,6 +45,8 @@ Route::middleware('auth')->group(function () {
         Route::post('mitras/{mitra}/payout', [MitraController::class, 'payout'])->name('mitras.payout');
         Route::resource('users', UserController::class)->except(['show', 'destroy']);
         Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+        Route::get('settings/delivery', [DeliverySettingsController::class, 'edit'])->name('settings.delivery');
+        Route::put('settings/delivery', [DeliverySettingsController::class, 'update'])->name('settings.delivery.update');
     });
 
     // Mitra dropbox

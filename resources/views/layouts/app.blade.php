@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    @stack('head')
 </head>
 <body>
 @php($user = auth()->user())
@@ -40,6 +41,7 @@
                 <a href="{{ route('mitras.index') }}" @class(['active' => request()->routeIs('mitras.*')])>Mitra Dropbox</a>
                 <a href="{{ route('reports.index') }}" @class(['active' => request()->routeIs('reports.*')])>Laporan</a>
                 <a href="{{ route('services.index') }}" @class(['active' => request()->routeIs('services.*')])>Layanan &amp; Harga</a>
+                <a href="{{ route('settings.delivery') }}" @class(['active' => request()->routeIs('settings.delivery*')])>Zona &amp; Ongkir</a>
                 <a href="{{ route('users.index') }}" @class(['active' => request()->routeIs('users.*')])>Pengguna</a>
             @endif
             @if ($user->role === 'mitra')

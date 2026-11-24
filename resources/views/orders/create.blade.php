@@ -35,7 +35,8 @@
             </div>
 
             <div class="card">
-                <h2>Pengiriman &amp; mitra</h2>
+                <h2>Antar-jemput &amp; mitra</h2>
+                <label class="check"><input type="checkbox" name="pickup" value="1" id="pickup" @checked(old('pickup'))> Cucian dijemput ke rumah pelanggan</label>
                 <div class="field">
                     <label for="delivery_method">Setelah selesai</label>
                     <select id="delivery_method" name="delivery_method">
@@ -43,6 +44,14 @@
                             <option value="{{ $key }}" @selected(old('delivery_method', 'ambil') === $key)>{{ $label }}</option>
                         @endforeach
                     </select>
+                </div>
+                <div class="fee-box" id="fee-box" hidden>
+                    <div id="fee-info">Menghitung ongkir…</div>
+                    <div class="field" id="manual-fee-wrap" style="margin: 8px 0 0">
+                        <label for="manual_delivery_fee">Ongkir manual (Rp, opsional)</label>
+                        <input type="number" id="manual_delivery_fee" name="manual_delivery_fee" min="0" step="500" value="{{ old('manual_delivery_fee') }}" inputmode="numeric" placeholder="Kosongkan untuk tarif zona">
+                        <div class="hint">Diisi jika pelanggan di luar zona/belum punya titik lokasi, atau ongkir disepakati lain.</div>
+                    </div>
                 </div>
                 <div class="field">
                     <label for="mitra_id">Dititip lewat Mitra Dropbox</label>
@@ -102,6 +111,7 @@
                     <div class="small muted">Total bayar</div>
                     <div class="big" id="grand-total">Rp0</div>
                     <div class="small muted" id="kg-total"></div>
+                    <div class="small muted" id="ongkir-line"></div>
                 </div>
                 <label class="check"><input type="checkbox" name="pay_now" value="1" id="pay_now" @checked(old('pay_now'))> Bayar sekarang</label>
                 <div class="field" id="pay-method-wrap">
@@ -152,6 +162,66 @@
         }
     });
 
+    // ----- Ongkir antar-jemput (dihitung server) -----
+    let laundryTotal = 0, ongkir = null, quoteTimer = null, lastQuoteKey = '';
+    const feeBox = document.getElementById('fee-box');
+    const feeInfo = document.getElementById('fee-info');
+    const quoteUrl = @json(route('orders.quote'));
+
+    function scheduleQuote() {
+        clearTimeout(quoteTimer);
+        quoteTimer = setTimeout(fetchQuote, 350);
+    }
+
+    function fetchQuote() {
+        const pickup = document.getElementById('pickup').checked;
+        const method = document.getElementById('delivery_method').value;
+        const manual = document.getElementById('manual_delivery_fee').value;
+        const phone = document.getElementById('customer_phone').value;
+        if (!pickup && method !== 'antar') {
+            feeBox.hidden = true;
+            if (ongkir) { ongkir = null; recalc(); }
+            lastQuoteKey = '';
+            return;
+        }
+        feeBox.hidden = false;
+        const params = new URLSearchParams({ phone: phone, pickup: pickup ? 1 : 0, delivery_method: method, laundry_total: laundryTotal });
+        if (manual !== '') params.set('manual_delivery_fee', manual);
+        const key = params.toString();
+        if (key === lastQuoteKey) return;
+        lastQuoteKey = key;
+        fetch(quoteUrl + '?' + key, { headers: { 'Accept': 'application/json' } })
+            .then((r) => r.json())
+            .then((q) => { ongkir = q; showQuote(q); recalc(); })
+            .catch(() => { feeInfo.textContent = 'Ongkir gagal dihitung. Isi ongkir manual bila perlu.'; });
+    }
+
+    function showQuote(q) {
+        const parts = [];
+        const trips = q.trips + ' perjalanan (' + [document.getElementById('pickup').checked ? 'jemput' : null,
+            document.getElementById('delivery_method').value === 'antar' ? 'antar' : null].filter(Boolean).join(' + ') + ')';
+        if (q.manual) {
+            parts.push('<strong>Ongkir manual ' + rupiah(q.fee) + '</strong> · ' + trips);
+        } else if (q.no_location) {
+            parts.push('<span class="warn">' + (q.customer_found ? 'Pelanggan belum punya titik lokasi.' : 'Pelanggan baru, lokasi belum diatur.')
+                + ' Isi ongkir manual, atau atur lokasinya di halaman pelanggan.</span>');
+        } else if (q.out_of_zone) {
+            parts.push('<span class="warn">Jarak ' + Number(q.distance_km).toLocaleString('id-ID') + ' km: di luar zona tarif. Isi ongkir manual.</span>');
+        } else {
+            parts.push('<strong>' + q.zone_name + '</strong> · ' + Number(q.distance_km).toLocaleString('id-ID') + ' km · '
+                + rupiah(q.fee_per_trip) + ' × ' + trips + ' = <strong>' + rupiah(q.fee) + '</strong>');
+        }
+        if (q.discount > 0) {
+            parts.push('<span style="color:#15803D">' + q.note + ': −' + rupiah(q.discount) + '</span>');
+        }
+        if (q.fee > 0 || q.manual) parts.push('Ongkir dibayar: <strong>' + rupiah(q.total) + '</strong>');
+        feeInfo.innerHTML = parts.join('<br>');
+    }
+
+    ['pickup', 'delivery_method'].forEach((id) => document.getElementById(id).addEventListener('change', scheduleQuote));
+    document.getElementById('manual_delivery_fee').addEventListener('input', scheduleQuote);
+    document.getElementById('customer_phone').addEventListener('change', scheduleQuote);
+
     function recalc() {
         let total = 0, kg = 0;
         itemsEl.querySelectorAll('.item-row').forEach((row) => {
@@ -171,8 +241,14 @@
             if (unit === 'kg') kg += q;
         });
         const discount = Math.min(Number(document.getElementById('discount').value) || 0, total);
-        document.getElementById('grand-total').textContent = rupiah(total - discount);
-        document.getElementById('grand-total-mobile').textContent = rupiah(total - discount);
+        laundryTotal = total - discount;
+        const grand = laundryTotal + (ongkir ? ongkir.total : 0);
+        document.getElementById('grand-total').textContent = rupiah(grand);
+        document.getElementById('grand-total-mobile').textContent = rupiah(grand);
+        document.getElementById('ongkir-line').textContent = ongkir && ongkir.trips > 0
+            ? 'Cucian ' + rupiah(laundryTotal) + ' + ongkir ' + rupiah(ongkir.total)
+            : '';
+        scheduleQuote();
         document.getElementById('kg-total').textContent = kg > 0 ? 'Total berat ' + kg.toLocaleString('id-ID') + ' kg' : '';
     }
 

@@ -62,7 +62,13 @@ class DeliveryController extends Controller
 
         if ($data['target'] === 'customer') {
             $data['mitra_id'] = null;
-            $fallback = Customer::find($data['customer_id'])?->address;
+            $customer = Customer::find($data['customer_id']);
+            $fallback = $customer?->address;
+            if ($customer && $customer->hasLocation() && empty($data['address'])) {
+                $data['latitude'] = $customer->latitude;
+                $data['longitude'] = $customer->longitude;
+            }
+            $data['distance_km'] = $customer?->distance_km;
         } else {
             $data['customer_id'] = null;
             $fallback = Mitra::find($data['mitra_id'])?->address;

@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\Mitra;
 use App\Models\Order;
 use App\Models\Service;
+use App\Services\DeliveryFeeService;
 use App\Services\OrderService;
 use App\Support\Phone;
 use Illuminate\Http\Request;
@@ -67,6 +68,8 @@ class OrderController extends Controller
             'customer_address' => ['nullable', 'string', 'max:500'],
             'mitra_id' => ['nullable', Rule::exists('mitras', 'id')],
             'delivery_method' => ['required', Rule::in(array_keys(Order::DELIVERY_METHODS))],
+            'pickup' => ['nullable', 'boolean'],
+            'manual_delivery_fee' => ['nullable', 'integer', 'min:0', 'max:1000000'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.service_id' => ['required', Rule::exists('services', 'id')],
             'items.*.qty' => ['required', 'numeric', 'min:0.1', 'max:1000'],
@@ -84,9 +87,39 @@ class OrderController extends Controller
         return redirect()->route('orders.show', $order)->with('success', 'Order '.$order->code.' berhasil dibuat.');
     }
 
+    /** Hitung ongkir untuk form order (dipanggil lewat JavaScript). */
+    public function quote(Request $request, DeliveryFeeService $fees)
+    {
+        $data = $request->validate([
+            'phone' => ['nullable', 'string', 'max:30'],
+            'pickup' => ['nullable', 'boolean'],
+            'delivery_method' => ['nullable', Rule::in(array_keys(Order::DELIVERY_METHODS))],
+            'laundry_total' => ['nullable', 'integer', 'min:0'],
+            'manual_delivery_fee' => ['nullable', 'integer', 'min:0'],
+        ]);
+
+        $customer = ! empty($data['phone'])
+            ? Customer::where('phone', Phone::normalize($data['phone']))->first()
+            : null;
+
+        $trips = ($request->boolean('pickup') ? 1 : 0) + (($data['delivery_method'] ?? 'ambil') === 'antar' ? 1 : 0);
+
+        $quote = $fees->quote(
+            $customer,
+            $trips,
+            (int) ($data['laundry_total'] ?? 0),
+            isset($data['manual_delivery_fee']) ? (int) $data['manual_delivery_fee'] : null,
+        );
+
+        $quote['customer_found'] = (bool) $customer;
+        $quote['customer_has_location'] = (bool) $customer?->hasLocation();
+
+        return response()->json($quote);
+    }
+
     public function show(Order $order)
     {
-        $order->load('items', 'customer', 'mitra', 'cashier', 'payout');
+        $order->load('items', 'customer', 'mitra', 'cashier', 'payout', 'zone');
 
         return view('orders.show', compact('order'));
     }

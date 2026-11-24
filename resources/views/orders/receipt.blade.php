@@ -47,9 +47,17 @@
     </table>
     <hr>
     <table>
-        @if ($order->discount > 0)
+        @if ($order->discount > 0 || $order->delivery_trips > 0)
             <tr><td>Subtotal</td><td class="r">{{ number_format($order->subtotal, 0, ',', '.') }}</td></tr>
-            <tr><td>Diskon</td><td class="r">-{{ number_format($order->discount, 0, ',', '.') }}</td></tr>
+            @if ($order->discount > 0)
+                <tr><td>Diskon</td><td class="r">-{{ number_format($order->discount, 0, ',', '.') }}</td></tr>
+            @endif
+        @endif
+        @if ($order->delivery_trips > 0)
+            <tr><td>Ongkir ({{ strtolower($order->tripsLabel()) }})</td><td class="r">{{ number_format($order->delivery_fee, 0, ',', '.') }}</td></tr>
+            @if ($order->delivery_discount > 0)
+                <tr><td>{{ $order->delivery_note }}</td><td class="r">-{{ number_format($order->delivery_discount, 0, ',', '.') }}</td></tr>
+            @endif
         @endif
         <tr class="bold"><td>TOTAL</td><td class="r">{{ rupiah($order->total) }}</td></tr>
         <tr><td>Status</td><td class="r bold">{{ $order->isPaid() ? 'LUNAS' : 'BELUM BAYAR' }}</td></tr>

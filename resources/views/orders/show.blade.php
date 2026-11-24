@@ -47,8 +47,13 @@
                 </form>
             @endunless
 
-            @if ($order->delivery_method === 'antar' && ! $order->isClosed())
-                <p style="margin-top: 12px"><a href="{{ route('deliveries.create', ['order' => $order->id]) }}" class="btn btn-outline btn-sm">+ Jadwalkan antar</a></p>
+            @if (($order->delivery_method === 'antar' || $order->pickup) && ! $order->isClosed())
+                <div class="row" style="margin-top: 12px">
+                    <a href="{{ route('deliveries.create', ['order' => $order->id]) }}" class="btn btn-outline btn-sm">+ Jadwalkan antar/jemput</a>
+                    @if ($order->customer->directionsUrl())
+                        <a href="{{ $order->customer->directionsUrl() }}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">Rute ke pelanggan</a>
+                    @endif
+                </div>
             @endif
         </div>
 
@@ -70,6 +75,12 @@
                     <tr><td colspan="3" class="num">Subtotal</td><td class="num">{{ rupiah($order->subtotal) }}</td></tr>
                     @if ($order->discount > 0)
                         <tr><td colspan="3" class="num">Diskon</td><td class="num">-{{ rupiah($order->discount) }}</td></tr>
+                    @endif
+                    @if ($order->delivery_trips > 0)
+                        <tr><td colspan="3" class="num">Ongkir {{ strtolower($order->tripsLabel()) }}@if ($order->zone) ({{ $order->zone->name }})@endif</td><td class="num">{{ rupiah($order->delivery_fee) }}</td></tr>
+                        @if ($order->delivery_discount > 0)
+                            <tr><td colspan="3" class="num">{{ $order->delivery_note }}</td><td class="num">-{{ rupiah($order->delivery_discount) }}</td></tr>
+                        @endif
                     @endif
                     <tr><td colspan="3" class="num strong">Total</td><td class="num strong">{{ rupiah($order->total) }}</td></tr>
                     </tbody>
@@ -96,6 +107,7 @@
             <h2>Info order</h2>
             <dl class="info">
                 <dt>Setelah selesai</dt><dd>{{ \App\Models\Order::DELIVERY_METHODS[$order->delivery_method] ?? $order->delivery_method }}</dd>
+                <dt>Antar-jemput</dt><dd>{{ $order->tripsLabel() }}@if ($order->distance_km !== null) · {{ qty($order->distance_km) }} km @endif</dd>
                 <dt>Estimasi selesai</dt><dd>{{ $order->due_at?->translatedFormat('d M Y H:i') ?? '-' }}</dd>
                 @if ($order->completed_at)<dt>Selesai</dt><dd>{{ $order->completed_at->translatedFormat('d M Y H:i') }}</dd>@endif
                 @if ($order->paid_at)<dt>Dibayar</dt><dd>{{ $order->paid_at->translatedFormat('d M Y H:i') }} ({{ \App\Models\Order::PAYMENT_METHODS[$order->payment_method] ?? $order->payment_method }})</dd>@endif

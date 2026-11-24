@@ -13,7 +13,7 @@ use Illuminate\Validation\ValidationException;
 
 class OrderService
 {
-    public function __construct(private StampService $stamps)
+    public function __construct(private StampService $stamps, private DeliveryFeeService $fees)
     {
     }
 
@@ -66,10 +66,22 @@ class OrderService
             }
 
             $discount = min((int) ($data['discount'] ?? 0), $subtotal);
-            $total = $subtotal - $discount;
+            $laundryTotal = $subtotal - $discount;
 
+            // Ongkir antar-jemput: 1 perjalanan untuk jemput, 1 untuk antar.
+            $pickup = ! empty($data['pickup']);
+            $deliveryMethod = $data['delivery_method'] ?? 'ambil';
+            $trips = ($pickup ? 1 : 0) + ($deliveryMethod === 'antar' ? 1 : 0);
+            $manualFee = isset($data['manual_delivery_fee']) && $data['manual_delivery_fee'] !== '' && $data['manual_delivery_fee'] !== null
+                ? (int) $data['manual_delivery_fee']
+                : null;
+            $quote = $this->fees->quote($customer, $trips, $laundryTotal, $manualFee);
+
+            $total = $laundryTotal + $quote['total'];
+
+            // Komisi mitra hanya dari cucian, bukan dari ongkir.
             $mitra = ! empty($data['mitra_id']) ? Mitra::find($data['mitra_id']) : null;
-            $commission = $mitra ? $mitra->commissionFor($billedKg, $total) : 0;
+            $commission = $mitra ? $mitra->commissionFor($billedKg, $laundryTotal) : 0;
 
             $payNow = ! empty($data['pay_now']);
 
@@ -79,7 +91,14 @@ class OrderService
                 'mitra_id' => $mitra?->id,
                 'user_id' => $user?->id,
                 'status' => 'diterima',
-                'delivery_method' => $data['delivery_method'] ?? 'ambil',
+                'delivery_method' => $deliveryMethod,
+                'pickup' => $pickup,
+                'distance_km' => $quote['distance_km'],
+                'delivery_zone_id' => $quote['zone_id'],
+                'delivery_trips' => $trips,
+                'delivery_fee' => $quote['fee'],
+                'delivery_discount' => $quote['discount'],
+                'delivery_note' => $quote['note'],
                 'subtotal' => $subtotal,
                 'discount' => $discount,
                 'total' => $total,
@@ -149,7 +168,7 @@ class OrderService
             || $order->status !== 'selesai'
             || ! $order->isPaid()
             || ! $order->customer->is_member
-            || $order->total < config('laundry.stamp_min_total')) {
+            || $order->laundryTotal() < config('laundry.stamp_min_total')) {
             return;
         }
 
@@ -158,7 +177,7 @@ class OrderService
         $order->save();
     }
 
-    private function resolveCustomer(array $data): Customer
+    public function resolveCustomer(array $data): Customer
     {
         if (! empty($data['customer_id'])) {
             return Customer::findOrFail($data['customer_id']);

@@ -260,3 +260,19 @@ dl.info dd { margin: 0; }
   .has-mobile-submit { padding-bottom: 90px; }
   .desktop-submit { display: none; }
 }
+
+/* Peta */
+.map-box { height: 300px; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin: 8px 0; background: #E2E8F0; z-index: 0; }
+@media (max-width: 640px) { .map-box { height: 260px; } }
+.map-tools { display: flex; flex-wrap: wrap; gap: 8px; }
+.map-tools input { flex: 1 1 200px; }
+.map-tools .btn { flex: 0 0 auto; }
+.distance-label { font-size: 13px; font-weight: 600; color: var(--navy); }
+.fee-box { border: 1px dashed var(--navy); border-radius: 8px; padding: 10px 12px; margin: 10px 0; font-size: 14px; background: #F8FAFC; }
+.fee-box .warn { color: var(--amber); }
+.zone-row { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr) auto auto; gap: 8px; align-items: end; margin-bottom: 8px; }
+.zone-row .check { min-height: 44px; margin: 0; }
+@media (max-width: 640px) {
+  .zone-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); border: 1px solid var(--line); border-radius: 10px; padding: 10px; }
+  .zone-row > :first-child { grid-column: 1 / -1; }
+}

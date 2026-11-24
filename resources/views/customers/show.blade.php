@@ -25,6 +25,37 @@
             </dl>
         </div>
 
+        <div class="card">
+            <h2>Antar-jemput</h2>
+            <dl class="info">
+                <dt>Jarak</dt>
+                <dd>
+                    @if ($distance !== null)
+                        {{ qty($distance) }} km {{ $customer->distance_source === 'jalan' ? 'lewat jalan' : '(garis lurus)' }}
+                    @else
+                        <span class="muted">Belum ada titik lokasi</span>
+                    @endif
+                </dd>
+                <dt>Zona</dt>
+                <dd>
+                    @if ($zone)
+                        {{ $zone->name }} · {{ rupiah($zone->fee) }}/perjalanan
+                    @elseif ($distance !== null)
+                        <span class="badge badge-siap">Di luar zona</span>
+                    @else
+                        -
+                    @endif
+                </dd>
+                <dt>Promo ongkir</dt><dd>{{ $customer->deliveryPromoLabel() ?? '-' }}</dd>
+            </dl>
+            <div class="row" style="margin-top: 10px">
+                @if ($customer->directionsUrl())
+                    <a href="{{ $customer->directionsUrl() }}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">Buka di Google Maps</a>
+                @endif
+                <a href="{{ route('customers.edit', $customer) }}" class="btn btn-outline btn-sm">{{ $customer->hasLocation() ? 'Ubah lokasi' : 'Atur lokasi' }}</a>
+            </div>
+        </div>
+
         @if ($customer->is_member)
             @php($target = config('laundry.stamp_target'))
             <div class="card">
