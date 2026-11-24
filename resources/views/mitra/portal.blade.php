@@ -37,15 +37,15 @@
     <div class="card">
         <h2>Cucian lewat outlet Anda</h2>
         <div class="table-wrap">
-            <table>
+            <table class="rtable">
                 <thead><tr><th>Order</th><th>Status</th><th class="num">Berat</th><th class="num">Komisi</th></tr></thead>
                 <tbody>
                 @forelse ($orders as $order)
                     <tr>
-                        <td class="strong">{{ $order->code }}<br><span class="small muted">{{ $order->customer->name }} · {{ $order->created_at->translatedFormat('d M') }}</span></td>
-                        <td><span class="badge badge-{{ $order->status }}">{{ $order->statusLabel() }}</span></td>
-                        <td class="num">{{ $order->total_kg > 0 ? qty($order->total_kg).' kg' : '-' }}</td>
-                        <td class="num">{{ rupiah($order->commission_amount) }}
+                        <td data-label="Order" class="strong">{{ $order->code }}<br><span class="small muted">{{ $order->customer->name }} · {{ $order->created_at->translatedFormat('d M') }}</span></td>
+                        <td data-label="Status"><span class="badge badge-{{ $order->status }}">{{ $order->statusLabel() }}</span></td>
+                        <td data-label="Berat" class="num">{{ $order->total_kg > 0 ? qty($order->total_kg).' kg' : '-' }}</td>
+                        <td data-label="Komisi" class="num">{{ rupiah($order->commission_amount) }}
                             @if ($order->mitra_payout_id)<br><span class="badge badge-lunas">Cair</span>@endif</td>
                     </tr>
                 @empty

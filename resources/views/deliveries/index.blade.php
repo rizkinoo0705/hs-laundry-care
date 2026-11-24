@@ -29,14 +29,14 @@
     </form>
 
     <div class="table-wrap">
-        <table>
+        <table class="rtable">
             <thead><tr><th>Jam</th><th>Jenis</th><th>Tujuan</th><th>Order</th><th>Status</th><th>Ubah</th></tr></thead>
             <tbody>
             @forelse ($deliveries as $delivery)
                 <tr>
-                    <td class="nowrap strong">{{ $delivery->scheduled_at->format('H:i') }}</td>
-                    <td><span class="badge">{{ $delivery->typeLabel() }}</span></td>
-                    <td>
+                    <td data-label="Jam" class="nowrap strong">{{ $delivery->scheduled_at->format('H:i') }}</td>
+                    <td data-label="Jenis"><span class="badge">{{ $delivery->typeLabel() }}</span></td>
+                    <td data-label="Tujuan">
                         {{ $delivery->targetName() }} @if ($delivery->mitra)<span class="small muted">(mitra)</span>@endif<br>
                         <span class="small">{{ $delivery->address }}</span>
                         @if ($delivery->targetPhone())
@@ -44,10 +44,10 @@
                         @endif
                         @if ($delivery->notes)<br><span class="small muted">{{ $delivery->notes }}</span>@endif
                     </td>
-                    <td>@if ($delivery->order)<a href="{{ route('orders.show', $delivery->order) }}">{{ $delivery->order->code }}</a>@else - @endif</td>
-                    <td><span class="badge badge-{{ $delivery->status }}">{{ $delivery->statusLabel() }}</span>
+                    <td data-label="Order">@if ($delivery->order)<a href="{{ route('orders.show', $delivery->order) }}">{{ $delivery->order->code }}</a>@else - @endif</td>
+                    <td data-label="Status"><span class="badge badge-{{ $delivery->status }}">{{ $delivery->statusLabel() }}</span>
                         @if ($delivery->courier)<br><span class="small muted">{{ $delivery->courier->name }}</span>@endif</td>
-                    <td>
+                    <td data-label="Ubah">
                         <form method="POST" action="{{ route('deliveries.status', $delivery) }}" class="inline-form">
                             @csrf @method('PATCH')
                             <select name="status" aria-label="Status">

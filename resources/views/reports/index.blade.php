@@ -52,16 +52,16 @@
     <div class="card">
         <h2>Per hari</h2>
         <div class="table-wrap">
-            <table>
+            <table class="rtable">
                 <thead><tr><th>Tanggal</th><th class="num">Order</th><th class="num">Kg</th><th class="num">Omzet</th><th class="num">Uang masuk</th></tr></thead>
                 <tbody>
                 @forelse ($daily as $day => $row)
                     <tr>
-                        <td class="nowrap">{{ \Illuminate\Support\Carbon::parse($day)->translatedFormat('D, d M') }}</td>
-                        <td class="num">{{ $row['orders'] }}</td>
-                        <td class="num">{{ qty($row['kg']) }}</td>
-                        <td class="num">{{ rupiah($row['omzet']) }}</td>
-                        <td class="num">{{ rupiah($row['income']) }}</td>
+                        <td data-label="Tanggal" class="nowrap">{{ \Illuminate\Support\Carbon::parse($day)->translatedFormat('D, d M') }}</td>
+                        <td data-label="Order" class="num">{{ $row['orders'] }}</td>
+                        <td data-label="Kg" class="num">{{ qty($row['kg']) }}</td>
+                        <td data-label="Omzet" class="num">{{ rupiah($row['omzet']) }}</td>
+                        <td data-label="Uang masuk" class="num">{{ rupiah($row['income']) }}</td>
                     </tr>
                 @empty
                     <tr><td colspan="5" class="empty">Tidak ada data.</td></tr>
@@ -75,14 +75,14 @@
         <div class="card">
             <h2>Per layanan</h2>
             <div class="table-wrap">
-                <table>
+                <table class="rtable">
                     <thead><tr><th>Layanan</th><th class="num">Jumlah</th><th class="num">Total</th></tr></thead>
                     <tbody>
                     @forelse ($byService as $row)
                         <tr>
-                            <td>{{ $row->service_name }}</td>
-                            <td class="num">{{ qty($row->qty) }} {{ $row->unit }}</td>
-                            <td class="num">{{ rupiah($row->total) }}</td>
+                            <td data-label="Layanan">{{ $row->service_name }}</td>
+                            <td data-label="Jumlah" class="num">{{ qty($row->qty) }} {{ $row->unit }}</td>
+                            <td data-label="Total" class="num">{{ rupiah($row->total) }}</td>
                         </tr>
                     @empty
                         <tr><td colspan="3" class="empty">Tidak ada data.</td></tr>
@@ -95,16 +95,16 @@
         <div class="card">
             <h2>Per mitra dropbox</h2>
             <div class="table-wrap">
-                <table>
+                <table class="rtable">
                     <thead><tr><th>Mitra</th><th class="num">Order</th><th class="num">Kg</th><th class="num">Omzet</th><th class="num">Komisi</th></tr></thead>
                     <tbody>
                     @forelse ($byMitra as $row)
                         <tr>
-                            <td><a href="{{ route('mitras.show', $row['mitra']) }}">{{ $row['mitra']->name }}</a></td>
-                            <td class="num">{{ $row['orders'] }}</td>
-                            <td class="num">{{ qty($row['kg']) }}</td>
-                            <td class="num">{{ rupiah($row['omzet']) }}</td>
-                            <td class="num">{{ rupiah($row['commission']) }}</td>
+                            <td data-label="Mitra"><a href="{{ route('mitras.show', $row['mitra']) }}">{{ $row['mitra']->name }}</a></td>
+                            <td data-label="Order" class="num">{{ $row['orders'] }}</td>
+                            <td data-label="Kg" class="num">{{ qty($row['kg']) }}</td>
+                            <td data-label="Omzet" class="num">{{ rupiah($row['omzet']) }}</td>
+                            <td data-label="Komisi" class="num">{{ rupiah($row['commission']) }}</td>
                         </tr>
                     @empty
                         <tr><td colspan="5" class="empty">Belum ada order lewat mitra.</td></tr>

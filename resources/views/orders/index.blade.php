@@ -44,7 +44,7 @@
     </form>
 
     <div class="table-wrap">
-        <table>
+        <table class="rtable">
             <thead>
             <tr>
                 <th>No. Order</th>
@@ -59,14 +59,14 @@
             <tbody>
             @forelse ($orders as $order)
                 <tr>
-                    <td><a href="{{ route('orders.show', $order) }}" class="strong">{{ $order->code }}</a>
+                    <td data-label="No. Order"><a href="{{ route('orders.show', $order) }}" class="strong">{{ $order->code }}</a>
                         @if ($order->mitra)<br><span class="small muted">via {{ $order->mitra->name }}</span>@endif</td>
-                    <td>{{ $order->customer->name }}<br><span class="small muted">{{ \App\Support\Phone::format($order->customer->phone) }}</span></td>
-                    <td><span class="badge badge-{{ $order->status }}">{{ $order->statusLabel() }}</span></td>
-                    <td><span class="badge badge-{{ $order->payment_status }}">{{ $order->isPaid() ? 'Lunas' : 'Belum' }}</span></td>
-                    <td class="num">{{ $order->total_kg > 0 ? qty($order->total_kg).' kg' : '-' }}</td>
-                    <td class="num">{{ rupiah($order->total) }}</td>
-                    <td class="small nowrap">{{ $order->created_at->translatedFormat('d M Y H:i') }}</td>
+                    <td data-label="Pelanggan">{{ $order->customer->name }}<br><span class="small muted">{{ \App\Support\Phone::format($order->customer->phone) }}</span></td>
+                    <td data-label="Status"><span class="badge badge-{{ $order->status }}">{{ $order->statusLabel() }}</span></td>
+                    <td data-label="Bayar"><span class="badge badge-{{ $order->payment_status }}">{{ $order->isPaid() ? 'Lunas' : 'Belum' }}</span></td>
+                    <td data-label="Berat" class="num">{{ $order->total_kg > 0 ? qty($order->total_kg).' kg' : '-' }}</td>
+                    <td data-label="Total" class="num">{{ rupiah($order->total) }}</td>
+                    <td data-label="Masuk" class="small nowrap">{{ $order->created_at->translatedFormat('d M Y H:i') }}</td>
                 </tr>
             @empty
                 <tr><td colspan="7" class="empty">Belum ada order.</td></tr>

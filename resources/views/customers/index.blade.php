@@ -20,23 +20,23 @@
     </form>
 
     <div class="table-wrap">
-        <table>
+        <table class="rtable">
             <thead>
             <tr><th>Nama</th><th>No. HP</th><th>Member</th><th class="num">Stempel</th><th class="num">Order</th></tr>
             </thead>
             <tbody>
             @forelse ($customers as $customer)
                 <tr>
-                    <td><a href="{{ route('customers.show', $customer) }}" class="strong">{{ $customer->name }}</a></td>
-                    <td>{{ \App\Support\Phone::format($customer->phone) }}</td>
-                    <td>@if ($customer->is_member)<span class="badge badge-member">{{ $customer->member_code }}</span>@else<span class="muted">-</span>@endif</td>
-                    <td class="num">
+                    <td data-label="Nama"><a href="{{ route('customers.show', $customer) }}" class="strong">{{ $customer->name }}</a></td>
+                    <td data-label="No. HP">{{ \App\Support\Phone::format($customer->phone) }}</td>
+                    <td data-label="Member">@if ($customer->is_member)<span class="badge badge-member">{{ $customer->member_code }}</span>@else<span class="muted">-</span>@endif</td>
+                    <td data-label="Stempel" class="num">
                         @if ($customer->is_member)
                             {{ $customer->stamps }}/{{ config('laundry.stamp_target') }}
                             @if ($customer->canRedeem())<br><span class="badge badge-siap">Bisa tukar hadiah</span>@endif
                         @else - @endif
                     </td>
-                    <td class="num">{{ $customer->orders_count }}</td>
+                    <td data-label="Order" class="num">{{ $customer->orders_count }}</td>
                 </tr>
             @empty
                 <tr><td colspan="5" class="empty">Belum ada pelanggan.</td></tr>

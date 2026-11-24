@@ -1,12 +1,13 @@
 @extends('layouts.app')
 @section('title', 'Order Baru')
+@section('hide-bottom-nav', '1')
 
 @section('content')
 <div class="page-head">
     <h1>Order Baru</h1>
 </div>
 
-<form method="POST" action="{{ route('orders.store') }}" id="order-form">
+<form method="POST" action="{{ route('orders.store') }}" id="order-form" class="has-mobile-submit">
     @csrf
     <div class="grid grid-2">
         <div class="stack">
@@ -110,9 +111,17 @@
                         @endforeach
                     </select>
                 </div>
-                <button type="submit" class="btn btn-block">Simpan Order</button>
+                <button type="submit" class="btn btn-block desktop-submit">Simpan Order</button>
             </div>
         </div>
+    </div>
+
+    <div class="mobile-submit">
+        <div>
+            <div class="mt-label">Total bayar</div>
+            <div class="mt-total" id="grand-total-mobile">Rp0</div>
+        </div>
+        <button type="submit" class="btn">Simpan Order</button>
     </div>
 </form>
 @endsection
@@ -156,6 +165,7 @@
         });
         const discount = Math.min(Number(document.getElementById('discount').value) || 0, total);
         document.getElementById('grand-total').textContent = rupiah(total - discount);
+        document.getElementById('grand-total-mobile').textContent = rupiah(total - discount);
         document.getElementById('kg-total').textContent = kg > 0 ? 'Total berat ' + kg.toLocaleString('id-ID') + ' kg' : '';
     }
 

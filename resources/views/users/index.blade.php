@@ -9,16 +9,16 @@
 
 <div class="card">
     <div class="table-wrap">
-        <table>
+        <table class="rtable">
             <thead><tr><th>Nama</th><th>Email</th><th>Peran</th><th>Status</th><th></th></tr></thead>
             <tbody>
             @foreach ($users as $user)
                 <tr>
-                    <td class="strong">{{ $user->name }}</td>
-                    <td>{{ $user->email }}</td>
-                    <td>{{ $user->roleLabel() }}@if ($user->mitra)<br><span class="small muted">{{ $user->mitra->name }}</span>@endif</td>
-                    <td>@if ($user->active)<span class="badge badge-selesai">Aktif</span>@else<span class="badge">Nonaktif</span>@endif</td>
-                    <td class="num"><a href="{{ route('users.edit', $user) }}" class="btn btn-outline btn-sm">Ubah</a></td>
+                    <td data-label="Nama" class="strong">{{ $user->name }}</td>
+                    <td data-label="Email">{{ $user->email }}</td>
+                    <td data-label="Peran">{{ $user->roleLabel() }}@if ($user->mitra)<br><span class="small muted">{{ $user->mitra->name }}</span>@endif</td>
+                    <td data-label="Status">@if ($user->active)<span class="badge badge-selesai">Aktif</span>@else<span class="badge">Nonaktif</span>@endif</td>
+                    <td data-label="" class="num"><a href="{{ route('users.edit', $user) }}" class="btn btn-outline btn-sm">Ubah</a></td>
                 </tr>
             @endforeach
             </tbody>
