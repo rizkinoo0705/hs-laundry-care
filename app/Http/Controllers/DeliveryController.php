@@ -38,6 +38,9 @@ class DeliveryController extends Controller
 
         return view('deliveries.create', [
             'order' => $order,
+            'orders' => Order::with('customer')->where('status', '!=', 'batal')
+                ->where(fn ($q) => $q->whereNotIn('status', ['selesai'])->orWhere('id', $order?->id))
+                ->latest()->limit(300)->get(),
             'customers' => Customer::orderBy('name')->get(['id', 'name', 'phone', 'address']),
             'mitras' => Mitra::where('active', true)->orderBy('name')->get(),
             'couriers' => Staff::active()->get(),
@@ -46,20 +49,31 @@ class DeliveryController extends Controller
 
     public function store(Request $request)
     {
+        // Bila order dipilih untuk pelanggan, isi pelanggan dari order (sebelum validasi).
+        if ($request->filled('order_id') && $request->input('target', 'customer') === 'customer' && ! $request->filled('customer_id')) {
+            $request->merge(['customer_id' => Order::whereKey($request->input('order_id'))->value('customer_id')]);
+        }
+
         $data = $request->validate([
             'type' => ['required', Rule::in(array_keys(Delivery::TYPES))],
             'target' => ['required', Rule::in(['customer', 'mitra'])],
             'customer_id' => ['nullable', 'required_if:target,customer', Rule::exists('customers', 'id')],
             'mitra_id' => ['nullable', 'required_if:target,mitra', Rule::exists('mitras', 'id')],
-            'order_id' => ['nullable', Rule::exists('orders', 'id')],
+            'order_id' => ['nullable', 'required_if:type,antar', Rule::exists('orders', 'id')],
             'address' => ['nullable', 'string', 'max:500'],
             'scheduled_at' => ['required', 'date'],
             'staff_id' => ['nullable', Rule::exists('staff', 'id')],
             'notes' => ['nullable', 'string', 'max:500'],
         ], [
             'customer_id.required_if' => 'Pilih pelanggan.',
+            'order_id.required_if' => 'Jadwal antar wajib memilih nomor order.',
             'mitra_id.required_if' => 'Pilih mitra.',
         ]);
+
+        // Antar ke pelanggan: pelanggan selalu mengikuti order yang dipilih.
+        if (! empty($data['order_id']) && $data['target'] === 'customer') {
+            $data['customer_id'] = Order::find($data['order_id'])->customer_id;
+        }
 
         if ($data['target'] === 'customer') {
             $data['mitra_id'] = null;

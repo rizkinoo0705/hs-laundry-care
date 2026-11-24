@@ -10,11 +10,6 @@
 <div class="card" style="max-width: 640px">
     <form method="POST" action="{{ route('deliveries.store') }}">
         @csrf
-        @if ($order)
-            <input type="hidden" name="order_id" value="{{ $order->id }}">
-            <p>Untuk order <a href="{{ route('orders.show', $order) }}" class="strong">{{ $order->code }}</a></p>
-        @endif
-
         <div class="grid grid-2" style="gap: 12px">
             <div class="field">
                 <label for="type">Jenis</label>
@@ -28,6 +23,21 @@
                 <label for="scheduled_at">Waktu</label>
                 <input type="datetime-local" id="scheduled_at" name="scheduled_at" required value="{{ old('scheduled_at', now()->addHour()->format('Y-m-d\TH:00')) }}">
             </div>
+        </div>
+
+        <div class="field" id="order-wrap">
+            <label for="order_id">No. order <span id="order-required" class="muted">(wajib untuk antar)</span></label>
+            <select id="order_id" name="order_id">
+                <option value="">Pilih order</option>
+                @foreach ($orders as $o)
+                    <option value="{{ $o->id }}" data-customer="{{ $o->customer_id }}" data-mitra="{{ $o->mitra_id }}" data-address="{{ $o->customer->address }}"
+                        @selected((string) old('order_id', $order?->id) === (string) $o->id)>
+                        {{ $o->code }} · {{ $o->customer->name }} · {{ $o->statusLabel() }}
+                    </option>
+                @endforeach
+            </select>
+            <div class="hint">Order yang masih diproses. Pelanggan &amp; alamat terisi otomatis dari order.</div>
+            @error('order_id')<div class="error">{{ $message }}</div>@enderror
         </div>
 
         <div class="field">
@@ -101,6 +111,27 @@
         if (opt && opt.dataset.address && !address.value) address.value = opt.dataset.address;
     };
     target.addEventListener('change', toggle);
+
+    // Jenis "antar" wajib memilih order; pilih order mengisi pelanggan otomatis.
+    const type = document.getElementById('type');
+    const orderSel = document.getElementById('order_id');
+    const toggleOrder = () => {
+        const antar = type.value === 'antar';
+        orderSel.required = antar;
+        document.getElementById('order-required').textContent = antar ? '(wajib)' : '(opsional)';
+    };
+    orderSel.addEventListener('change', () => {
+        const opt = orderSel.selectedOptions[0];
+        if (!opt || !opt.value) return;
+        if (target.value === 'customer' || !opt.dataset.mitra) {
+            target.value = 'customer';
+            document.getElementById('customer_id').value = opt.dataset.customer;
+            toggle();
+        }
+        if (opt.dataset.address && !address.value) address.value = opt.dataset.address;
+    });
+    type.addEventListener('change', toggleOrder);
+    toggleOrder();
     document.getElementById('customer_id').addEventListener('change', fill);
     document.getElementById('mitra_id').addEventListener('change', fill);
     toggle();
