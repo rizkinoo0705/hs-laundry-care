@@ -1,0 +1,80 @@
+@extends('layouts.app')
+@section('title', 'Daftar Order')
+
+@section('content')
+<div class="page-head">
+    <h1>Daftar Order</h1>
+    <a href="{{ route('orders.create') }}" class="btn">+ Order Baru</a>
+</div>
+
+<div class="card">
+    <form method="GET" class="filters">
+        <div>
+            <label for="q">Cari</label>
+            <input type="search" id="q" name="q" value="{{ request('q') }}" placeholder="No. order, nama, atau HP">
+        </div>
+        <div>
+            <label for="status">Status</label>
+            <select id="status" name="status">
+                <option value="">Semua</option>
+                <option value="proses" @selected(request('status') === 'proses')>Masih diproses</option>
+                @foreach (\App\Models\Order::STATUSES as $key => $label)
+                    <option value="{{ $key }}" @selected(request('status') === $key)>{{ $label }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div>
+            <label for="payment">Pembayaran</label>
+            <select id="payment" name="payment">
+                <option value="">Semua</option>
+                <option value="belum" @selected(request('payment') === 'belum')>Belum bayar</option>
+                <option value="lunas" @selected(request('payment') === 'lunas')>Lunas</option>
+            </select>
+        </div>
+        <div>
+            <label for="mitra">Mitra</label>
+            <select id="mitra" name="mitra">
+                <option value="">Semua</option>
+                @foreach ($mitras as $m)
+                    <option value="{{ $m->id }}" @selected((string) request('mitra') === (string) $m->id)>{{ $m->name }}</option>
+                @endforeach
+            </select>
+        </div>
+        <button type="submit" class="btn btn-outline">Terapkan</button>
+    </form>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+            <tr>
+                <th>No. Order</th>
+                <th>Pelanggan</th>
+                <th>Status</th>
+                <th>Bayar</th>
+                <th class="num">Berat</th>
+                <th class="num">Total</th>
+                <th>Masuk</th>
+            </tr>
+            </thead>
+            <tbody>
+            @forelse ($orders as $order)
+                <tr>
+                    <td><a href="{{ route('orders.show', $order) }}" class="strong">{{ $order->code }}</a>
+                        @if ($order->mitra)<br><span class="small muted">via {{ $order->mitra->name }}</span>@endif</td>
+                    <td>{{ $order->customer->name }}<br><span class="small muted">{{ \App\Support\Phone::format($order->customer->phone) }}</span></td>
+                    <td><span class="badge badge-{{ $order->status }}">{{ $order->statusLabel() }}</span></td>
+                    <td><span class="badge badge-{{ $order->payment_status }}">{{ $order->isPaid() ? 'Lunas' : 'Belum' }}</span></td>
+                    <td class="num">{{ $order->total_kg > 0 ? qty($order->total_kg).' kg' : '-' }}</td>
+                    <td class="num">{{ rupiah($order->total) }}</td>
+                    <td class="small nowrap">{{ $order->created_at->translatedFormat('d M Y H:i') }}</td>
+                </tr>
+            @empty
+                <tr><td colspan="7" class="empty">Belum ada order.</td></tr>
+            @endforelse
+            </tbody>
+        </table>
+    </div>
+
+    {{ $orders->links() }}
+</div>
+@endsection
