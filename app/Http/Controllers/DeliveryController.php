@@ -89,7 +89,7 @@ class DeliveryController extends Controller
             $fallback = Mitra::find($data['mitra_id'])?->address;
         }
 
-        $data['address'] = $data['address'] ?: $fallback;
+        $data['address'] = ($data['address'] ?? null) ?: $fallback;
 
         if (! $data['address']) {
             return back()->withInput()->withErrors(['address' => 'Alamat wajib diisi (belum ada alamat tersimpan).']);

@@ -30,11 +30,11 @@ class DeliveryScheduleTest extends TestCase
         $this->actingAs($admin)->post(route('deliveries.store'), [
             'type' => 'antar', 'target' => 'customer', 'order_id' => $order->id, 'customer_id' => $budi->id,
             'scheduled_at' => now()->addHour()->format('Y-m-d H:i'),
-        ])->assertSessionHasNoErrors();
+        ])->assertSessionHasNoErrors()->assertRedirect();
         $this->actingAs($admin)->post(route('deliveries.store'), [
             'type' => 'antar', 'target' => 'customer', 'order_id' => $order->id,
             'scheduled_at' => now()->addHour()->format('Y-m-d H:i'),
-        ])->assertSessionHasNoErrors();
+        ])->assertSessionHasNoErrors()->assertRedirect();
 
         $this->assertSame([$nia->id, $nia->id], Delivery::orderBy('id')->pluck('customer_id')->all());
         $this->assertSame('Jl. Melati 1', Delivery::first()->address);
@@ -42,7 +42,7 @@ class DeliveryScheduleTest extends TestCase
         // Jemput tetap boleh tanpa order
         $this->actingAs($admin)->post(route('deliveries.store'), [
             'type' => 'jemput', 'target' => 'customer', 'customer_id' => $budi->id, 'scheduled_at' => now()->addHour()->format('Y-m-d H:i'),
-        ])->assertSessionHasNoErrors();
+        ])->assertSessionHasNoErrors()->assertRedirect();
         $this->assertSame(3, Delivery::count());
 
         $this->actingAs($admin)->get(route('deliveries.create'))->assertOk()->assertSee('HS-T-001');
