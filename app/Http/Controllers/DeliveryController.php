@@ -130,7 +130,7 @@ class DeliveryController extends Controller
     {
         return Order::with('customer')
             ->where('pickup', true)
-            ->whereIn('status', ['diterima'])
+            ->whereIn('status', ['menunggu_timbang', 'diterima'])
             ->whereDoesntHave('deliveries', fn ($q) => $q->where('type', 'jemput')->where('status', '!=', 'batal'))
             ->orderBy('code')
             ->get();

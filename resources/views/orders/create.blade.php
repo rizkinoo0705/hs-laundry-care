@@ -51,6 +51,10 @@
                         </label>
                     @endforeach
                 </fieldset>
+                <label class="check" id="weigh-later-wrap" hidden>
+                    <input type="checkbox" name="weigh_later" value="1" id="weigh_later" @checked(old('weigh_later'))>
+                    Belum ditimbang, berat diisi setelah cucian tiba di outlet
+                </label>
                 <div class="fee-box" id="fee-box" hidden>
                     <div id="fee-info">Menghitung ongkir…</div>
                     <div class="field" id="manual-fee-wrap" style="margin: 8px 0 0">
@@ -87,7 +91,12 @@
         </div>
 
         <div class="stack">
-            <div class="card">
+            <div class="card" id="weigh-later-note" hidden>
+                <h2>Layanan</h2>
+                <p>Cucian akan <strong>ditimbang di outlet</strong>. Setelah tiba, buka order ini dan klik <strong>Timbang &amp; Isi Layanan</strong>.</p>
+                <p class="small muted">Nomor order langsung dibuat sekarang, jadi jadwal jemput bisa dikaitkan ke order ini.</p>
+            </div>
+            <div class="card" id="items-card">
                 <h2>Layanan</h2>
                 <div id="items">
                     @php($oldItems = old('items', [['service_id' => $services->first()?->id, 'qty' => '']]))
@@ -308,6 +317,24 @@
     const toggle = () => document.getElementById('pay-method-wrap').style.display = payNow.checked ? '' : 'none';
     payNow.addEventListener('change', toggle);
     toggle();
+
+    // Timbang belakangan: hanya untuk order yang dijemput.
+    const weighLater = document.getElementById('weigh_later');
+    function toggleWeighLater() {
+        const mode = currentMode();
+        const canWeighLater = mode === 'jemput' || mode === 'keduanya';
+        document.getElementById('weigh-later-wrap').hidden = !canWeighLater;
+        if (!canWeighLater) weighLater.checked = false;
+        const later = weighLater.checked;
+        document.getElementById('items-card').hidden = later;
+        document.getElementById('weigh-later-note').hidden = !later;
+        document.querySelectorAll('#items-card input, #items-card select, #items-card button').forEach((el) => el.disabled = later);
+        payNow.closest('label').hidden = later;
+        if (later) { payNow.checked = false; toggle(); }
+    }
+    weighLater.addEventListener('change', toggleWeighLater);
+    document.querySelectorAll('input[name=delivery_mode]').forEach((el) => el.addEventListener('change', toggleWeighLater));
+    toggleWeighLater();
     recalc();
 })();
 </script>

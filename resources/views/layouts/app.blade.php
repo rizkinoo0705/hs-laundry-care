@@ -46,7 +46,8 @@
                 <a href="{{ route('users.index') }}" @class(['active' => request()->routeIs('users.*')])>Pengguna</a>
             @endif
             @if ($user->role === 'mitra')
-                <a href="{{ route('mitra.portal') }}" class="active">Portal Mitra</a>
+                <a href="{{ route('mitra.portal') }}" @class(['active' => request()->routeIs('mitra.portal')])>Portal Mitra</a>
+                <a href="{{ route('mitra.orders.create') }}" @class(['active' => request()->routeIs('mitra.orders.create')])>+ Titipan Baru</a>
             @endif
         </nav>
 

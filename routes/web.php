@@ -5,6 +5,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeliveryController;
 use App\Http\Controllers\DeliverySettingsController;
+use App\Http\Controllers\Mitra\OrderController as MitraOrderController;
 use App\Http\Controllers\Mitra\PortalController;
 use App\Http\Controllers\MitraController;
 use App\Http\Controllers\OrderController;
@@ -32,6 +33,7 @@ Route::middleware('auth')->group(function () {
         Route::patch('orders/{order}/pay', [OrderController::class, 'pay'])->name('orders.pay');
         Route::get('orders/{order}/receipt', [OrderController::class, 'receipt'])->name('orders.receipt');
         Route::patch('orders/{order}/staff', [OrderController::class, 'assignStaff'])->name('orders.staff');
+        Route::patch('orders/{order}/items', [OrderController::class, 'fillItems'])->name('orders.items');
 
         Route::resource('customers', CustomerController::class)->except(['destroy']);
         Route::post('customers/{customer}/redeem', [CustomerController::class, 'redeem'])->name('customers.redeem');
@@ -55,5 +57,10 @@ Route::middleware('auth')->group(function () {
     });
 
     // Mitra dropbox
-    Route::get('/mitra', PortalController::class)->middleware('role:mitra')->name('mitra.portal');
+    Route::middleware('role:mitra')->prefix('mitra')->name('mitra.')->group(function () {
+        Route::get('/', PortalController::class)->name('portal');
+        Route::get('orders/create', [MitraOrderController::class, 'create'])->name('orders.create');
+        Route::post('orders', [MitraOrderController::class, 'store'])->name('orders.store');
+        Route::get('orders/{order}/receipt', [MitraOrderController::class, 'receipt'])->name('orders.receipt');
+    });
 });

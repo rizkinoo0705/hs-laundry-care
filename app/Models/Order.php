@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Order extends Model
 {
     public const STATUSES = [
+        'menunggu_timbang' => 'Menunggu Timbang',
         'diterima' => 'Diterima',
         'dicuci' => 'Dicuci',
         'disetrika' => 'Disetrika',
@@ -168,6 +169,11 @@ class Order extends Model
         return self::STATUSES[$this->status] ?? $this->status;
     }
 
+    public function awaitingWeighing(): bool
+    {
+        return $this->status === 'menunggu_timbang';
+    }
+
     public function isPaid(): bool
     {
         return $this->payment_status === 'lunas';
@@ -185,6 +191,11 @@ class Order extends Model
             return [];
         }
 
+        // Order jemput yang belum ditimbang: lanjut lewat form timbang, atau dibatalkan.
+        if ($this->status === 'menunggu_timbang') {
+            return ['batal'];
+        }
+
         $index = array_search($this->status, self::FLOW, true);
         $next = array_slice(self::FLOW, $index + 1);
         $next[] = 'batal';
@@ -200,7 +211,9 @@ class Order extends Model
             'Cucian Anda di '.config('laundry.name').':',
             'No. order: '.$this->code,
             'Status: '.$this->statusLabel(),
-            'Total: '.rupiah($this->total).' ('.($this->isPaid() ? 'LUNAS' : 'belum dibayar').')',
+            $this->status === 'menunggu_timbang'
+                ? 'Total: menunggu cucian ditimbang di outlet'
+                : 'Total: '.rupiah($this->total).' ('.($this->isPaid() ? 'LUNAS' : 'belum dibayar').')',
         ];
 
         if ($this->status === 'siap') {

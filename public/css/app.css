@@ -287,3 +287,4 @@ fieldset.choice-group legend { font-size: 13px; font-weight: 600; color: #334155
 .choice-title { display: block; font-size: 14px; font-weight: 600; color: var(--ink); }
 .choice-desc { display: block; font-size: 12px; color: var(--muted); line-height: 1.35; }
 @media (max-width: 400px) { .choice-group { grid-template-columns: minmax(0, 1fr); } }
+.badge-menunggu_timbang { background: #EDE9FE; color: #5B21B6; }

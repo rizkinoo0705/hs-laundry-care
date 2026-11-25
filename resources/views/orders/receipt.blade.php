@@ -36,6 +36,10 @@
         @if ($order->due_at)<tr><td>Selesai</td><td class="r">{{ $order->due_at->format('d/m/Y H:i') }}</td></tr>@endif
     </table>
     <hr>
+    @if ($order->awaitingWeighing())
+        <div class="center bold">CUCIAN DIJEMPUT</div>
+        <div class="center">Berat &amp; total menyusul setelah ditimbang di outlet.</div>
+    @endif
     <table>
         @foreach ($order->items as $item)
             <tr><td colspan="2">{{ $item->service_name }}</td></tr>

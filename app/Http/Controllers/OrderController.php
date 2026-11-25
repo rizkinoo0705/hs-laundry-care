@@ -78,9 +78,10 @@ class OrderController extends Controller
             'delivery_method' => ['required', Rule::in(array_keys(Order::DELIVERY_METHODS))],
             'pickup' => ['nullable', 'boolean'],
             'manual_delivery_fee' => ['nullable', 'integer', 'min:0', 'max:1000000'],
-            'items' => ['required', 'array', 'min:1'],
-            'items.*.service_id' => ['required', Rule::exists('services', 'id')],
-            'items.*.qty' => ['required', 'numeric', 'min:0.1', 'max:1000'],
+            'weigh_later' => ['nullable', 'boolean'],
+            'items' => ['exclude_if:weigh_later,1', 'required', 'array', 'min:1'],
+            'items.*.service_id' => ['exclude_if:weigh_later,1', 'required', Rule::exists('services', 'id')],
+            'items.*.qty' => ['exclude_if:weigh_later,1', 'required', 'numeric', 'min:0.1', 'max:1000'],
             'discount' => ['nullable', 'integer', 'min:0'],
             'notes' => ['nullable', 'string', 'max:500'],
             'pay_now' => ['nullable', 'boolean'],
@@ -129,7 +130,28 @@ class OrderController extends Controller
     {
         $order->load('items', 'customer', 'mitra', 'cashier', 'payout', 'zone', 'staff', 'staffCommissions.staff');
 
-        return view('orders.show', ['order' => $order, 'staff' => Staff::active()->get()]);
+        return view('orders.show', [
+            'order' => $order,
+            'staff' => Staff::active()->get(),
+            'services' => $order->awaitingWeighing() ? Service::active()->orderBy('category')->orderBy('name')->get() : collect(),
+        ]);
+    }
+
+    /** Isi layanan & berat untuk order jemput setelah ditimbang di outlet. */
+    public function fillItems(Request $request, Order $order)
+    {
+        $data = $request->validate([
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.service_id' => ['required', Rule::exists('services', 'id')],
+            'items.*.qty' => ['required', 'numeric', 'min:0.1', 'max:1000'],
+            'discount' => ['nullable', 'integer', 'min:0'],
+        ], [
+            'items.required' => 'Tambahkan minimal satu layanan.',
+        ]);
+
+        $this->orders->fillItems($order, $data['items'], (int) ($data['discount'] ?? 0));
+
+        return redirect()->route('orders.show', $order)->with('success', 'Berat & layanan disimpan. Total order: '.rupiah($order->fresh()->total).'.');
     }
 
     /** Ganti petugas pengerjaan (selama order belum selesai). */

@@ -13,6 +13,56 @@
     </div>
 </div>
 
+@if ($order->awaitingWeighing())
+    <div class="card" style="margin-bottom: 16px; border: 2px solid var(--navy)">
+        <h2>Timbang &amp; Isi Layanan</h2>
+        <p class="small muted">Isi setelah cucian tiba di outlet dan ditimbang. Total, ongkir, dan promo dihitung otomatis.</p>
+        <form method="POST" action="{{ route('orders.items', $order) }}" id="weigh-form">
+            @csrf @method('PATCH')
+            <div id="items">
+                @php($oldItems = old('items', [['service_id' => $services->first()?->id, 'qty' => '']]))
+                @foreach ($oldItems as $i => $item)
+                    <div class="item-row">
+                        <div>
+                            <label>Layanan</label>
+                            <select name="items[{{ $i }}][service_id]" class="js-service" required>
+                                @foreach ($services as $s)
+                                    <option value="{{ $s->id }}" data-price="{{ $s->price }}" data-unit="{{ $s->unit }}" data-min="{{ $s->hasMinimum() ? (float) $s->min_qty : 0 }}"
+                                        @selected((string) ($item['service_id'] ?? '') === (string) $s->id)>
+                                        {{ $s->name }} - {{ rupiah($s->price) }}/{{ $s->unit }}@if ($s->hasMinimum()) (min. {{ qty($s->min_qty) }} {{ $s->unit }})@endif
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label>Jumlah <span class="js-unit muted"></span></label>
+                            <input type="number" name="items[{{ $i }}][qty]" class="js-qty" step="0.1" min="0.1" required value="{{ $item['qty'] ?? '' }}" inputmode="decimal">
+                        </div>
+                        <div class="line-total js-line">Rp0</div>
+                        <div><button type="button" class="btn btn-danger btn-sm js-remove" aria-label="Hapus baris" style="min-height: 44px">×</button></div>
+                        <div class="hint js-min-hint" style="grid-column: 1 / -1; margin-top: -4px"></div>
+                    </div>
+                @endforeach
+            </div>
+            <div class="row" style="margin-bottom: 12px">
+                <button type="button" class="btn btn-outline btn-sm" id="add-item">+ Tambah layanan</button>
+            </div>
+            <div class="grid grid-2" style="gap: 12px; align-items: end">
+                <div class="field" style="margin: 0">
+                    <label for="discount">Diskon (Rp)</label>
+                    <input type="number" id="discount" name="discount" min="0" step="500" value="{{ old('discount', 0) }}" inputmode="numeric">
+                </div>
+                <div class="total-box">
+                    <div class="small muted">Total cucian</div>
+                    <div class="big" id="grand-total">Rp0</div>
+                    @if ($order->delivery_trips > 0)<div class="small muted">+ ongkir {{ rupiah($order->deliveryNet()) }} (promo dihitung ulang saat disimpan)</div>@endif
+                </div>
+            </div>
+            <button type="submit" class="btn btn-block" style="margin-top: 12px">Simpan Berat &amp; Layanan</button>
+        </form>
+    </div>
+@endif
+
 <div class="grid grid-2">
     <div class="stack">
         <div class="card">
@@ -35,7 +85,7 @@
                 </form>
             @endif
 
-            @unless ($order->isPaid() || $order->status === 'batal')
+            @unless ($order->isPaid() || $order->status === 'batal' || $order->awaitingWeighing())
                 <form method="POST" action="{{ route('orders.pay', $order) }}" class="inline-form">
                     @csrf @method('PATCH')
                     <select name="payment_method" aria-label="Metode bayar">
@@ -158,3 +208,55 @@
     </div>
 </div>
 @endsection
+
+@if ($order->awaitingWeighing())
+@push('scripts')
+<script>
+(function () {
+    const itemsEl = document.getElementById('items');
+    const rupiah = (n) => 'Rp' + Math.round(n).toLocaleString('id-ID');
+    const fmt = (n) => n.toLocaleString('id-ID');
+    function recalc() {
+        let total = 0;
+        itemsEl.querySelectorAll('.item-row').forEach((row) => {
+            const opt = row.querySelector('.js-service').selectedOptions[0];
+            const price = opt ? Number(opt.dataset.price) : 0;
+            const unit = opt ? opt.dataset.unit : '';
+            const min = opt ? Number(opt.dataset.min) || 0 : 0;
+            const q = parseFloat(row.querySelector('.js-qty').value) || 0;
+            const charged = q > 0 && min > 0 ? Math.max(q, min) : q;
+            row.querySelector('.js-unit').textContent = unit ? '(' + unit + ')' : '';
+            row.querySelector('.js-line').textContent = rupiah(price * charged);
+            row.querySelector('.js-min-hint').textContent = (q > 0 && charged > q)
+                ? 'Di bawah minimum: ditagih ' + fmt(min) + ' ' + unit : '';
+            total += Math.round(price * charged);
+        });
+        const discount = Math.min(Number(document.getElementById('discount').value) || 0, total);
+        document.getElementById('grand-total').textContent = rupiah(total - discount);
+    }
+    function reindex() {
+        itemsEl.querySelectorAll('.item-row').forEach((row, i) => {
+            row.querySelector('.js-service').name = 'items[' + i + '][service_id]';
+            row.querySelector('.js-qty').name = 'items[' + i + '][qty]';
+        });
+    }
+    document.getElementById('add-item').addEventListener('click', () => {
+        const clone = itemsEl.querySelector('.item-row').cloneNode(true);
+        clone.querySelector('.js-qty').value = '';
+        clone.querySelector('.js-min-hint').textContent = '';
+        itemsEl.appendChild(clone);
+        reindex(); recalc();
+    });
+    itemsEl.addEventListener('click', (e) => {
+        if (e.target.classList.contains('js-remove') && itemsEl.querySelectorAll('.item-row').length > 1) {
+            e.target.closest('.item-row').remove(); reindex(); recalc();
+        }
+    });
+    itemsEl.addEventListener('input', recalc);
+    itemsEl.addEventListener('change', recalc);
+    document.getElementById('discount').addEventListener('input', recalc);
+    recalc();
+})();
+</script>
+@endpush
+@endif

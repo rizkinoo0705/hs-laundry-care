@@ -36,7 +36,7 @@
 <div class="card" style="margin-bottom: 16px">
     <h2>Cucian dalam proses</h2>
     <div class="row">
-        @foreach (['diterima', 'dicuci', 'disetrika', 'siap'] as $status)
+        @foreach (['menunggu_timbang', 'diterima', 'dicuci', 'disetrika', 'siap'] as $status)
             <a href="{{ route('orders.index', ['status' => $status]) }}" class="btn btn-outline">
                 {{ \App\Models\Order::STATUSES[$status] }}: {{ $statusCounts[$status] ?? 0 }}
             </a>

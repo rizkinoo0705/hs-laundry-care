@@ -7,8 +7,17 @@
         <h1>{{ $mitra->name }}</h1>
         <div class="sub">Mitra Dropbox · Komisi {{ $mitra->commissionLabel() }}</div>
     </div>
-    <a href="{{ \App\Support\Phone::waLink(config('laundry.wa_number')) }}" target="_blank" rel="noopener" class="btn btn-green">Hubungi HS Laundry</a>
+    <div class="row">
+        <a href="{{ route('mitra.orders.create') }}" class="btn">+ Titipan Baru</a>
+        <a href="{{ \App\Support\Phone::waLink(config('laundry.wa_number')) }}" target="_blank" rel="noopener" class="btn btn-green">Hubungi HS Laundry</a>
+    </div>
 </div>
+
+@if (session('printOrder'))
+    <div class="card" style="margin-bottom: 16px">
+        <a href="{{ route('mitra.orders.receipt', session('printOrder')) }}" target="_blank" class="btn btn-outline">Cetak nota titipan</a>
+    </div>
+@endif
 
 <div class="grid grid-4" style="margin-bottom: 16px">
     <div class="stat">
@@ -42,7 +51,7 @@
                 <tbody>
                 @forelse ($orders as $order)
                     <tr>
-                        <td data-label="Order" class="strong">{{ $order->code }}<br><span class="small muted">{{ $order->customer->name }} · {{ $order->created_at->translatedFormat('d M') }}</span></td>
+                        <td data-label="Order" class="strong"><a href="{{ route('mitra.orders.receipt', $order) }}" target="_blank">{{ $order->code }}</a><br><span class="small muted">{{ $order->customer->name }} · {{ $order->created_at->translatedFormat('d M') }}</span></td>
                         <td data-label="Status"><span class="badge badge-{{ $order->status }}">{{ $order->statusLabel() }}</span></td>
                         <td data-label="Berat" class="num">{{ $order->total_kg > 0 ? qty($order->total_kg).' kg' : '-' }}</td>
                         <td data-label="Komisi" class="num">{{ rupiah($order->commission_amount) }}
