@@ -43,6 +43,10 @@ class OrderController extends Controller
             $query->serviceType($type);
         }
 
+        if (in_array($handover = $request->query('serah'), ['outlet', 'antar', 'dropbox'], true)) {
+            $query->handover($handover);
+        }
+
         if ($mitra = $request->query('mitra')) {
             $query->where('mitra_id', $mitra);
         }

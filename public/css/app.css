@@ -295,3 +295,8 @@ fieldset.choice-group legend { font-size: 13px; font-weight: 600; color: #334155
 .badge.type-jemput { background: #FCE7F3; color: #9D174D; }
 .badge.type-antar { background: #CCFBF1; color: #115E59; }
 .badge.type-none { background: #E2E8F0; color: #334155; }
+
+/* Kotak kontrol di dashboard (bisa diklik) */
+a.control-tile { display: block; text-decoration: none; color: inherit; }
+a.control-tile:hover { border-color: var(--navy); background: #F8FAFC; color: inherit; }
+.stat-note .warn { color: var(--amber); font-weight: 600; }

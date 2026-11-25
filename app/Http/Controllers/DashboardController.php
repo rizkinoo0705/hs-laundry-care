@@ -22,7 +22,31 @@ class DashboardController extends Controller
             ->groupBy('status')
             ->pluck('total', 'status');
 
+        // ---- Kontrol serah terima: diambil, diantar, dijemput ----
+        $ready = fn () => Order::where('status', 'siap');
+        $activeDelivery = fn (string $type) => Delivery::where('type', $type)->whereIn('status', ['terjadwal', 'jalan']);
+
+        $control = [
+            'outlet' => $ready()->handover('outlet')->count(),
+            'dropbox' => $ready()->handover('dropbox')->count(),
+            'antar' => [
+                'total' => $ready()->handover('antar')->count(),
+                'unpaid' => $ready()->handover('antar')->where('payment_status', 'belum')->count(),
+                'no_courier' => $activeDelivery('antar')->whereNull('staff_id')->count(),
+                'on_the_way' => $activeDelivery('antar')->where('status', 'jalan')->count(),
+            ],
+            'jemput' => [
+                'total' => Order::where('status', 'menunggu_timbang')->count(),
+                'unscheduled' => Order::where('status', 'menunggu_timbang')
+                    ->whereDoesntHave('deliveries', fn ($q) => $q->where('type', 'jemput')->where('status', '!=', 'batal'))
+                    ->count(),
+                'no_courier' => $activeDelivery('jemput')->whereNull('staff_id')->count(),
+                'on_the_way' => $activeDelivery('jemput')->where('status', 'jalan')->count(),
+            ],
+        ];
+
         return view('dashboard', [
+            'control' => $control,
             'ordersToday' => Order::active()->where('created_at', '>=', $today)->count(),
             'kgToday' => (float) Order::active()->where('created_at', '>=', $today)->sum('total_kg'),
             'incomeToday' => (int) Order::where('payment_status', 'lunas')->where('paid_at', '>=', $today)->sum('total'),

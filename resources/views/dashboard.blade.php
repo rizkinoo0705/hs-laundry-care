@@ -41,6 +41,38 @@
 @endif
 
 <div class="card" style="margin-bottom: 16px">
+    <h2>Kontrol serah terima</h2>
+    <div class="grid grid-4">
+        <a href="{{ route('orders.index', ['status' => 'siap', 'serah' => 'outlet']) }}" class="stat control-tile">
+            <div class="stat-label">Siap diambil di outlet</div>
+            <div class="stat-value">{{ $control['outlet'] }}</div>
+            <div class="stat-note">pelanggan datang mengambil</div>
+        </a>
+        <a href="{{ route('orders.index', ['status' => 'siap', 'serah' => 'antar']) }}" class="stat control-tile">
+            <div class="stat-label">Siap diantar</div>
+            <div class="stat-value">{{ $control['antar']['total'] }}</div>
+            <div class="stat-note">
+                @if ($control['antar']['unpaid'])<span class="warn">{{ $control['antar']['unpaid'] }} belum lunas</span> · @endif
+                {{ $control['antar']['no_courier'] }} tanpa kurir · {{ $control['antar']['on_the_way'] }} di jalan
+            </div>
+        </a>
+        <a href="{{ route('orders.index', ['status' => 'menunggu_timbang']) }}" class="stat control-tile">
+            <div class="stat-label">Perlu dijemput / ditimbang</div>
+            <div class="stat-value">{{ $control['jemput']['total'] }}</div>
+            <div class="stat-note">
+                @if ($control['jemput']['unscheduled'])<span class="warn">{{ $control['jemput']['unscheduled'] }} belum dijadwalkan</span> · @endif
+                {{ $control['jemput']['no_courier'] }} tanpa kurir · {{ $control['jemput']['on_the_way'] }} di jalan
+            </div>
+        </a>
+        <a href="{{ route('orders.index', ['status' => 'siap', 'serah' => 'dropbox']) }}" class="stat control-tile">
+            <div class="stat-label">Siap kembali ke dropbox</div>
+            <div class="stat-value">{{ $control['dropbox'] }}</div>
+            <div class="stat-note">titipan mitra yang sudah siap</div>
+        </a>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom: 16px">
     <h2>Cucian dalam proses</h2>
     <div class="row">
         @foreach (['menunggu_timbang', 'diterima', 'dicuci', 'disetrika', 'siap'] as $status)

@@ -33,6 +33,15 @@
             </select>
         </div>
         <div>
+            <label for="serah">Serah terima</label>
+            <select id="serah" name="serah">
+                <option value="">Semua</option>
+                <option value="outlet" @selected(request('serah') === 'outlet')>Diambil di outlet</option>
+                <option value="antar" @selected(request('serah') === 'antar')>Diantar kurir</option>
+                <option value="dropbox" @selected(request('serah') === 'dropbox')>Kembali ke dropbox</option>
+            </select>
+        </div>
+        <div>
             <label for="payment">Pembayaran</label>
             <select id="payment" name="payment">
                 <option value="">Semua</option>

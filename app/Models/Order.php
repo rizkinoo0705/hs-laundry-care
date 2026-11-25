@@ -222,6 +222,17 @@ class Order extends Model
         return $this->deliveries()->where('type', $type)->where('status', '!=', 'batal')->exists();
     }
 
+    /** Cara cucian diserahkan setelah selesai: outlet | antar | dropbox. */
+    public function scopeHandover(Builder $query, string $handover): Builder
+    {
+        return match ($handover) {
+            'dropbox' => $query->whereNotNull('mitra_id'),
+            'antar' => $query->whereNull('mitra_id')->where('delivery_method', 'antar'),
+            'outlet' => $query->whereNull('mitra_id')->where('delivery_method', '!=', 'antar'),
+            default => $query,
+        };
+    }
+
     public function awaitingWeighing(): bool
     {
         return $this->status === 'menunggu_timbang';
