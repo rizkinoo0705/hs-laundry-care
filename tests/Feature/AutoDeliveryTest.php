@@ -37,7 +37,7 @@ class AutoDeliveryTest extends TestCase
         return Order::latest('id')->first();
     }
 
-    private function status(Order $order, string $status): void
+    private function setStatus(Order $order, string $status): void
     {
         $this->actingAs($this->kasir)->patch(route('orders.status', $order), ['status' => $status])->assertSessionHasNoErrors();
     }
@@ -51,7 +51,7 @@ class AutoDeliveryTest extends TestCase
     {
         $order = $this->order('keduanya');
 
-        $this->status($order, 'siap');
+        $this->setStatus($order, 'siap');
         $this->assertSame(0, Delivery::count());             // belum lunas -> belum diantar
 
         $this->pay($order);
@@ -72,7 +72,7 @@ class AutoDeliveryTest extends TestCase
         $this->pay($order);
         $this->assertSame(0, Delivery::count());             // belum siap
 
-        $this->status($order, 'siap');
+        $this->setStatus($order, 'siap');
         $this->assertSame(1, Delivery::count());
 
         $this->pay($order);                                   // tidak dobel
@@ -84,7 +84,7 @@ class AutoDeliveryTest extends TestCase
         foreach (['none', 'jemput'] as $mode) {
             $order = $this->order($mode);
             $this->pay($order);
-            $this->status($order, 'siap');
+            $this->setStatus($order, 'siap');
         }
         $this->assertSame(0, Delivery::count());
     }
@@ -92,7 +92,7 @@ class AutoDeliveryTest extends TestCase
     public function test_delivery_done_marks_order_selesai_and_records_commission(): void
     {
         $order = $this->order('antar');
-        $this->status($order, 'siap');
+        $this->setStatus($order, 'siap');
         $this->pay($order);
         $d = Delivery::first();
         $kurir = Staff::create(['name' => 'Andi', 'position' => 'kurir']);
