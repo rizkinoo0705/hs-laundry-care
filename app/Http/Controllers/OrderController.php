@@ -149,11 +149,17 @@ class OrderController extends Controller
             'items.*.service_id' => ['required', Rule::exists('services', 'id')],
             'items.*.qty' => ['required', 'numeric', 'min:0.1', 'max:1000'],
             'discount' => ['nullable', 'integer', 'min:0'],
+            'pickup_staff_id' => ['nullable', Rule::exists('staff', 'id')],
         ], [
             'items.required' => 'Tambahkan minimal satu layanan.',
         ]);
 
-        $this->orders->fillItems($order, $data['items'], (int) ($data['discount'] ?? 0));
+        $this->orders->fillItems(
+            $order,
+            $data['items'],
+            (int) ($data['discount'] ?? 0),
+            isset($data['pickup_staff_id']) ? (int) $data['pickup_staff_id'] : null,
+        );
 
         return redirect()->route('orders.show', $order)->with('success', 'Berat & layanan disimpan. Total order: '.rupiah($order->fresh()->total).'.');
     }

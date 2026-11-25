@@ -99,13 +99,13 @@ class OrderService
      * Isi layanan & berat untuk order jemput yang baru ditimbang di outlet.
      * Menghitung ulang total, promo ongkir (syarat minimal belanja), dan komisi mitra.
      */
-    public function fillItems(Order $order, array $items, int $discount = 0): Order
+    public function fillItems(Order $order, array $items, int $discount = 0, ?int $pickupStaffId = null): Order
     {
         if ($order->status !== 'menunggu_timbang') {
             throw ValidationException::withMessages(['items' => 'Order ini sudah ditimbang.']);
         }
 
-        return DB::transaction(function () use ($order, $items, $discount) {
+        return DB::transaction(function () use ($order, $items, $discount, $pickupStaffId) {
             $order->loadMissing('customer', 'mitra');
             $calc = $this->buildItems($items);
 
@@ -131,6 +131,11 @@ class OrderService
                 'due_at' => now()->addHours($calc['max_hours'] ?: 48),
                 'commission_amount' => $order->mitra ? $order->mitra->commissionFor($calc['billed_kg'], $laundryTotal) : 0,
             ])->save();
+
+            // Cucian sudah ditimbang di outlet = penjemputan selesai.
+            if ($order->pickup) {
+                $this->completePickup($order, $pickupStaffId);
+            }
 
             return $order->load('items');
         });
@@ -258,6 +263,46 @@ class OrderService
             'scheduled_at' => now(),
             'status' => 'terjadwal',
         ]);
+    }
+
+    /**
+     * Tandai jemput selesai (atau buat catatannya bila belum dijadwalkan),
+     * dengan kurir yang menjemput bila dipilih. Komisi kurir ikut tercatat.
+     */
+    private function completePickup(Order $order, ?int $staffId): Delivery
+    {
+        $delivery = $order->deliveries()
+            ->where('type', 'jemput')
+            ->whereIn('status', ['terjadwal', 'jalan', 'selesai'])
+            ->latest('id')
+            ->first();
+
+        if (! $delivery) {
+            $customer = $order->customer;
+            $delivery = new Delivery([
+                'type' => 'jemput',
+                'order_id' => $order->id,
+                'customer_id' => $customer->id,
+                'address' => $customer->address ?: 'Alamat belum diisi',
+                'latitude' => $customer->latitude,
+                'longitude' => $customer->longitude,
+                'distance_km' => $customer->distance_km,
+                'scheduled_at' => now(),
+            ]);
+        }
+
+        if ($staffId) {
+            $delivery->staff_id = $staffId;
+        }
+        if ($delivery->status !== 'selesai') {
+            $delivery->status = 'selesai';
+            $delivery->completed_at = now();
+        }
+        $delivery->save();
+
+        $this->staffCommissions->syncForDelivery($delivery);
+
+        return $delivery;
     }
 
     /**

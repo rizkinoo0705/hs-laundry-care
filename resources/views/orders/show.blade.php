@@ -47,6 +47,19 @@
             <div class="row" style="margin-bottom: 12px">
                 <button type="button" class="btn btn-outline btn-sm" id="add-item">+ Tambah layanan</button>
             </div>
+            @if ($order->pickup)
+                @php($pickupDelivery = $order->deliveries()->where('type', 'jemput')->where('status', '!=', 'batal')->latest('id')->first())
+                <div class="field">
+                    <label for="pickup_staff_id">Petugas yang menjemput</label>
+                    <select id="pickup_staff_id" name="pickup_staff_id">
+                        <option value="">Kosong / tidak dicatat</option>
+                        @foreach ($staff as $st)
+                            <option value="{{ $st->id }}" @selected((string) old('pickup_staff_id', $pickupDelivery?->staff_id) === (string) $st->id)>{{ $st->name }}</option>
+                        @endforeach
+                    </select>
+                    <div class="hint">Saat disimpan, jadwal jemput otomatis <strong>Selesai</strong> di daftar Antar-Jemput. Komisi jemput masuk ke petugas ini (jika dipilih).</div>
+                </div>
+            @endif
             <div class="grid grid-2" style="gap: 12px; align-items: end">
                 <div class="field" style="margin: 0">
                     <label for="discount">Diskon (Rp)</label>

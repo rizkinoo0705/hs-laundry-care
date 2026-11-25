@@ -158,4 +158,42 @@ class WeighLaterAndMitraOrderTest extends TestCase
         $this->actingAs($user)->get(route('orders.create'))->assertForbidden();
         $this->actingAs($this->kasir)->get(route('mitra.orders.create'))->assertForbidden();
     }
+
+    public function test_weighing_completes_pickup_with_optional_courier(): void
+    {
+        Setting::set('staff_rate_jemput', 1000);
+        $kurir = \App\Models\Staff::create(['name' => 'Andi', 'position' => 'kurir']);
+
+        // 1) Belum ada jadwal jemput -> dibuat otomatis berstatus selesai, komisi ke kurir
+        $order = $this->createJemputOrder('jemput');
+        $this->actingAs($this->kasir)->patch(route('orders.items', $order), [
+            'items' => [['service_id' => $this->reguler->id, 'qty' => '4']],
+            'pickup_staff_id' => $kurir->id,
+        ])->assertSessionHasNoErrors();
+
+        $d = Delivery::where('order_id', $order->id)->where('type', 'jemput')->first();
+        $this->assertNotNull($d);
+        $this->assertSame('selesai', $d->status);
+        $this->assertSame($kurir->id, $d->staff_id);
+        $this->assertSame(1000, $kurir->unpaidCommission());
+
+        // 2) Jadwal jemput sudah ada -> ditandai selesai, petugas boleh kosong
+        $order2 = $this->createJemputOrder('keduanya');
+        $this->actingAs($this->kasir)->post(route('deliveries.store'), [
+            'type' => 'jemput', 'target' => 'customer', 'order_id' => $order2->id,
+            'scheduled_at' => now()->addHour()->format('Y-m-d H:i'),
+        ])->assertSessionHasNoErrors();
+
+        $this->actingAs($this->kasir)->get(route('orders.show', $order2))->assertOk()->assertSee('Petugas yang menjemput');
+        $this->actingAs($this->kasir)->patch(route('orders.items', $order2), [
+            'items' => [['service_id' => $this->reguler->id, 'qty' => '3']],
+            'pickup_staff_id' => '',
+        ])->assertSessionHasNoErrors();
+
+        $jemput = Delivery::where('order_id', $order2->id)->where('type', 'jemput')->get();
+        $this->assertCount(1, $jemput);                      // tidak dobel
+        $this->assertSame('selesai', $jemput->first()->status);
+        $this->assertNull($jemput->first()->staff_id);
+        $this->assertSame(1000, $kurir->fresh()->unpaidCommission()); // tidak bertambah
+    }
 }
