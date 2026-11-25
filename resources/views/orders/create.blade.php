@@ -36,9 +36,7 @@
 
             <div class="card">
                 <h2>Antar-jemput &amp; mitra</h2>
-                @php
-                    $mode = old('delivery_mode', 'none');
-                @endphp
+                @php($mode = old('delivery_mode', 'none'))
                 <fieldset class="choice-group">
                     <legend>Cucian diantar-jemput kurir?</legend>
                     @foreach (\App\Models\Order::DELIVERY_MODES as $key => $opt)

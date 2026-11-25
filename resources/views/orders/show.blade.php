@@ -98,10 +98,8 @@
             @endunless
 
             @if (($order->delivery_method === 'antar' || $order->pickup) && ! $order->isClosed())
-                @php
-                    $antarDelivery = $order->deliveries()->where('type', 'antar')->where('status', '!=', 'batal')->with('staff')->first();
-                    $jemputDelivery = $order->deliveries()->where('type', 'jemput')->where('status', '!=', 'batal')->with('staff')->first();
-                @endphp
+                @php($antarDelivery = $order->deliveries()->where('type', 'antar')->where('status', '!=', 'batal')->with('staff')->first())
+                @php($jemputDelivery = $order->deliveries()->where('type', 'jemput')->where('status', '!=', 'batal')->with('staff')->first())
                 <div class="fee-box" style="margin-top: 12px">
                     @if ($order->pickup)
                         <div><strong>Jemput:</strong>
