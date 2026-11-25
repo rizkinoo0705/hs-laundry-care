@@ -106,4 +106,36 @@ class AutoDeliveryTest extends TestCase
 
         $this->actingAs($this->kasir)->get(route('deliveries.index'))->assertOk()->assertDontSee('Perlu kurir');
     }
+
+    public function test_order_selesai_from_order_page_also_finishes_delivery(): void
+    {
+        \App\Models\Setting::set('staff_rate_antar', 1500);
+
+        $order = $this->order('keduanya');
+        $this->setStatus($order, 'siap');
+        $this->pay($order);
+        $d = Delivery::first();
+        $kurir = Staff::create(['name' => 'Andi', 'position' => 'kurir']);
+        $d->update(['staff_id' => $kurir->id]);
+
+        // Diselesaikan dari halaman order -> jadwal antar ikut selesai, komisi kurir tercatat
+        $this->setStatus($order->fresh(), 'selesai');
+        $d->refresh();
+        $this->assertSame('selesai', $d->status);
+        $this->assertNotNull($d->completed_at);
+        $this->assertSame(1500, $kurir->unpaidCommission());
+
+        $this->actingAs($this->kasir)->get(route('deliveries.index'))->assertDontSee('Perlu kurir');
+    }
+
+    public function test_order_batal_cancels_active_deliveries(): void
+    {
+        $order = $this->order('antar');
+        $this->setStatus($order, 'siap');
+        $this->pay($order);
+        $this->assertSame('terjadwal', Delivery::first()->status);
+
+        $this->setStatus($order->fresh(), 'batal');
+        $this->assertSame('batal', Delivery::first()->status);
+    }
 }

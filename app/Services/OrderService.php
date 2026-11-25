@@ -199,6 +199,8 @@ class OrderService
 
             $order->save();
 
+            $this->syncDeliveriesWithOrder($order);
+
             $this->maybeAwardStamp($order, $user);
             $this->staffCommissions->recordForOrder($order);
             $this->autoScheduleDelivery($order);
@@ -256,6 +258,31 @@ class OrderService
             'scheduled_at' => now(),
             'status' => 'terjadwal',
         ]);
+    }
+
+    /**
+     * Status order diubah langsung dari halaman order:
+     *  - Selesai: jadwal antar yang masih aktif ikut Selesai (komisi kurir ikut tercatat).
+     *  - Batal: semua jadwal antar/jemput yang masih aktif ikut Batal.
+     */
+    private function syncDeliveriesWithOrder(Order $order): void
+    {
+        if (! in_array($order->status, ['selesai', 'batal'], true)) {
+            return;
+        }
+
+        $types = $order->status === 'selesai' ? ['antar'] : ['antar', 'jemput'];
+
+        $order->deliveries()
+            ->whereIn('type', $types)
+            ->whereIn('status', ['terjadwal', 'jalan'])
+            ->get()
+            ->each(function (Delivery $delivery) use ($order) {
+                $delivery->status = $order->status;
+                $delivery->completed_at = $order->status === 'selesai' ? now() : null;
+                $delivery->save();
+                $this->staffCommissions->syncForDelivery($delivery);
+            });
     }
 
     /** Member dapat 1 stempel saat order selesai DAN lunas (sekali per order). */
