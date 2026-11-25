@@ -131,7 +131,7 @@
         orderSel.required = antar;
         document.getElementById('order-required').textContent = antar ? '(wajib)' : '(opsional)';
         document.getElementById('order-hint').textContent = antar
-            ? (available ? 'Order berstatus "Siap Diambil/Antar" dengan layanan Antar atau Jemput + antar.' : 'Belum ada order yang siap diantar. Ubah status order ke "Siap Diambil/Antar" dulu.')
+            ? (available ? 'Order berstatus "Siap Diambil/Antar", sudah lunas, dengan layanan Antar atau Jemput + antar.' : 'Belum ada order yang siap diantar. Order antar yang siap & lunas otomatis masuk daftar pengiriman.')
             : 'Opsional. Order dengan layanan Jemput / Jemput + antar yang belum dijemput.';
     };
     orderSel.addEventListener('change', () => {

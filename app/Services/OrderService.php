@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Customer;
+use App\Models\Delivery;
 use App\Models\Mitra;
 use App\Models\Order;
 use App\Models\Service;
@@ -200,6 +201,7 @@ class OrderService
 
             $this->maybeAwardStamp($order, $user);
             $this->staffCommissions->recordForOrder($order);
+            $this->autoScheduleDelivery($order);
 
             return $order;
         });
@@ -224,9 +226,36 @@ class OrderService
 
             $this->maybeAwardStamp($order, $user);
             $this->staffCommissions->recordForOrder($order);
+            $this->autoScheduleDelivery($order);
 
             return $order;
         });
+    }
+
+    /**
+     * Order antar yang sudah siap & lunas otomatis masuk daftar pengiriman
+     * (tanpa kurir, menunggu kurir dipilih). Tidak dibuat dobel.
+     */
+    public function autoScheduleDelivery(Order $order): ?Delivery
+    {
+        if (! $order->readyForDelivery() || $order->hasActiveDelivery('antar')) {
+            return null;
+        }
+
+        $order->loadMissing('customer');
+        $customer = $order->customer;
+
+        return Delivery::create([
+            'type' => 'antar',
+            'order_id' => $order->id,
+            'customer_id' => $customer->id,
+            'address' => $customer->address ?: 'Alamat belum diisi, hubungi pelanggan',
+            'latitude' => $customer->latitude,
+            'longitude' => $customer->longitude,
+            'distance_km' => $customer->distance_km,
+            'scheduled_at' => now(),
+            'status' => 'terjadwal',
+        ]);
     }
 
     /** Member dapat 1 stempel saat order selesai DAN lunas (sekali per order). */

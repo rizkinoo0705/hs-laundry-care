@@ -7,6 +7,7 @@ use App\Models\Delivery;
 use App\Models\Mitra;
 use App\Models\Order;
 use App\Models\Staff;
+use App\Services\OrderService;
 use App\Services\StaffCommissionService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -26,6 +27,11 @@ class DeliveryController extends Controller
         }
 
         return view('deliveries.index', [
+            'needCourier' => Delivery::with('customer', 'mitra', 'order', 'staff')
+                ->whereNull('staff_id')
+                ->whereIn('status', ['terjadwal', 'jalan'])
+                ->orderBy('scheduled_at')
+                ->get(),
             'deliveries' => $query->get(),
             'date' => $date,
             'couriers' => Staff::active()->get(),
@@ -75,6 +81,9 @@ class DeliveryController extends Controller
             if ($o->status !== 'siap' || $o->delivery_method !== 'antar') {
                 return back()->withInput()->withErrors(['order_id' => 'Order '.$o->code.' belum siap diantar atau tidak memilih layanan antar.']);
             }
+            if (! $o->isPaid()) {
+                return back()->withInput()->withErrors(['order_id' => 'Order '.$o->code.' belum lunas. Order hanya diantar setelah lunas.']);
+            }
             if ($o->deliveries()->where('type', 'antar')->where('status', '!=', 'batal')->exists()) {
                 return back()->withInput()->withErrors(['order_id' => 'Order '.$o->code.' sudah punya jadwal antar.']);
             }
@@ -120,6 +129,7 @@ class DeliveryController extends Controller
         return Order::with('customer')
             ->where('status', 'siap')
             ->where('delivery_method', 'antar')
+            ->where('payment_status', 'lunas')
             ->whereDoesntHave('deliveries', fn ($q) => $q->where('type', 'antar')->where('status', '!=', 'batal'))
             ->orderBy('code')
             ->get();
@@ -136,7 +146,7 @@ class DeliveryController extends Controller
             ->get();
     }
 
-    public function updateStatus(Request $request, Delivery $delivery, StaffCommissionService $commissions)
+    public function updateStatus(Request $request, Delivery $delivery, StaffCommissionService $commissions, OrderService $orders)
     {
         $data = $request->validate([
             'status' => ['required', Rule::in(array_keys(Delivery::STATUSES))],
@@ -157,6 +167,14 @@ class DeliveryController extends Controller
 
         $commissions->syncForDelivery($delivery);
 
-        return back()->with('success', 'Status antar-jemput diperbarui.');
+        // Cucian sudah diantar -> order otomatis selesai.
+        $message = 'Status antar-jemput diperbarui.';
+        if ($delivery->type === 'antar' && $delivery->status === 'selesai' && $delivery->order
+            && in_array('selesai', $delivery->order->allowedNextStatuses(), true)) {
+            $orders->changeStatus($delivery->order, 'selesai', $request->user());
+            $message .= ' Order '.$delivery->order->code.' otomatis Selesai.';
+        }
+
+        return back()->with('success', $message);
     }
 }

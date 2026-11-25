@@ -21,10 +21,10 @@ class DeliveryScheduleTest extends TestCase
         $this->admin = User::create(['name' => 'Admin', 'email' => 'a@test.id', 'password' => 'rahasia123', 'role' => 'admin']);
     }
 
-    private function order(string $code, Customer $c, string $status, string $method, bool $pickup = false): Order
+    private function order(string $code, Customer $c, string $status, string $method, bool $pickup = false, string $payment = 'lunas'): Order
     {
         return Order::create(['code' => $code, 'customer_id' => $c->id, 'status' => $status, 'delivery_method' => $method,
-            'pickup' => $pickup, 'subtotal' => 21000, 'total' => 21000]);
+            'pickup' => $pickup, 'subtotal' => 21000, 'total' => 21000, 'payment_status' => $payment]);
     }
 
     private function schedule(array $data)
@@ -43,16 +43,18 @@ class DeliveryScheduleTest extends TestCase
         $ambil = $this->order('HS-SIAP-AMBIL', $budi, 'siap', 'ambil');            // diambil sendiri
         $proses = $this->order('HS-PROSES-ANTAR', $budi, 'dicuci', 'antar');       // belum siap
         $jemput = $this->order('HS-JEMPUT', $budi, 'diterima', 'ambil', true);     // perlu dijemput
+        $unpaid = $this->order('HS-SIAP-BELUM-LUNAS', $budi, 'siap', 'antar', false, 'belum');
 
         // Daftar order di form
         $page = $this->actingAs($this->admin)->get(route('deliveries.create'))->assertOk();
         $page->assertSee('HS-SIAP-ANTAR')->assertSee('HS-JEMPUT')
-            ->assertDontSee('HS-SIAP-AMBIL')->assertDontSee('HS-PROSES-ANTAR');
+            ->assertDontSee('HS-SIAP-AMBIL')->assertDontSee('HS-PROSES-ANTAR')->assertDontSee('HS-SIAP-BELUM-LUNAS');
 
         // Antar tanpa order / order tidak memenuhi syarat -> ditolak
         $this->schedule(['type' => 'antar', 'customer_id' => $nia->id])->assertSessionHasErrors('order_id');
         $this->schedule(['type' => 'antar', 'order_id' => $ambil->id])->assertSessionHasErrors('order_id');
         $this->schedule(['type' => 'antar', 'order_id' => $proses->id])->assertSessionHasErrors('order_id');
+        $this->schedule(['type' => 'antar', 'order_id' => $unpaid->id])->assertSessionHasErrors('order_id');
         $this->assertSame(0, Delivery::count());
 
         // Order siap + layanan antar -> berhasil, pelanggan dari order

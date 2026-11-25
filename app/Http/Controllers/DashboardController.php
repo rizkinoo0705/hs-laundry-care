@@ -35,6 +35,7 @@ class DashboardController extends Controller
                 ->whereNotIn('status', ['selesai', 'batal'])
                 ->orderBy('scheduled_at')->get(),
             'memberCount' => Customer::where('is_member', true)->count(),
+            'needCourier' => Delivery::whereNull('staff_id')->whereIn('status', ['terjadwal', 'jalan'])->count(),
         ]);
     }
 }

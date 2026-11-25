@@ -33,6 +33,13 @@
     </div>
 </div>
 
+@if ($needCourier > 0)
+    <div class="alert alert-error" role="status" style="background: var(--amber-soft); color: var(--amber); border-color: #FCD34D">
+        <strong>{{ $needCourier }} pengiriman belum ada kurirnya.</strong>
+        <a href="{{ route('deliveries.index') }}">Atur kurir</a>
+    </div>
+@endif
+
 <div class="card" style="margin-bottom: 16px">
     <h2>Cucian dalam proses</h2>
     <div class="row">

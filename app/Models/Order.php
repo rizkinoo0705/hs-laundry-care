@@ -209,6 +209,19 @@ class Order extends Model
         };
     }
 
+    /** Order antar (Antar saja / Jemput + antar) yang sudah siap DAN lunas: boleh diantar. */
+    public function readyForDelivery(): bool
+    {
+        return $this->delivery_method === 'antar'
+            && $this->status === 'siap'
+            && $this->isPaid();
+    }
+
+    public function hasActiveDelivery(string $type): bool
+    {
+        return $this->deliveries()->where('type', $type)->where('status', '!=', 'batal')->exists();
+    }
+
     public function awaitingWeighing(): bool
     {
         return $this->status === 'menunggu_timbang';

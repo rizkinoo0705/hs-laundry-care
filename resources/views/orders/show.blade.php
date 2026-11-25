@@ -98,12 +98,39 @@
             @endunless
 
             @if (($order->delivery_method === 'antar' || $order->pickup) && ! $order->isClosed())
-                <div class="row" style="margin-top: 12px">
-                    <a href="{{ route('deliveries.create', ['order' => $order->id]) }}" class="btn btn-outline btn-sm">+ Jadwalkan antar/jemput</a>
-                    @if ($order->customer->directionsUrl())
-                        <a href="{{ $order->customer->directionsUrl() }}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">Rute ke pelanggan</a>
+                @php
+                    $antarDelivery = $order->deliveries()->where('type', 'antar')->where('status', '!=', 'batal')->with('staff')->first();
+                    $jemputDelivery = $order->deliveries()->where('type', 'jemput')->where('status', '!=', 'batal')->with('staff')->first();
+                @endphp
+                <div class="fee-box" style="margin-top: 12px">
+                    @if ($order->pickup)
+                        <div><strong>Jemput:</strong>
+                            @if ($jemputDelivery)
+                                {{ $jemputDelivery->statusLabel() }} · {{ $jemputDelivery->staff?->name ?? 'belum ada kurir' }}
+                            @else
+                                belum dijadwalkan
+                                <a href="{{ route('deliveries.create', ['order' => $order->id]) }}">Jadwalkan jemput</a>
+                            @endif
+                        </div>
+                    @endif
+                    @if ($order->delivery_method === 'antar')
+                        <div><strong>Antar:</strong>
+                            @if ($antarDelivery)
+                                {{ $antarDelivery->statusLabel() }} · {{ $antarDelivery->staff?->name ?? 'belum ada kurir' }}
+                                <a href="{{ route('deliveries.index') }}">Atur kurir</a>
+                            @elseif ($order->readyForDelivery())
+                                siap diantar <a href="{{ route('deliveries.create', ['order' => $order->id]) }}">Buat jadwal antar</a>
+                            @else
+                                <span class="warn">otomatis masuk daftar pengiriman setelah status <em>Siap</em> dan <em>lunas</em>@unless ($order->isPaid()) (belum lunas)@endunless.</span>
+                            @endif
+                        </div>
                     @endif
                 </div>
+                @if ($order->customer->directionsUrl())
+                    <div class="row" style="margin-top: 8px">
+                        <a href="{{ $order->customer->directionsUrl() }}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">Rute ke pelanggan</a>
+                    </div>
+                @endif
             @endif
         </div>
 
