@@ -36,6 +36,15 @@ class Order extends Model
         'keduanya' => ['title' => 'Jemput + antar', 'desc' => 'Kurir jemput dan antar kembali (2 perjalanan)', 'pickup' => true, 'method' => 'antar'],
     ];
 
+    /** Jenis order untuk daftar & filter (dihitung dari mitra, pickup, delivery_method). */
+    public const SERVICE_TYPES = [
+        'keduanya' => 'Antar-jemput customer',
+        'dropbox' => 'Antar-jemput dropbox',
+        'jemput' => 'Jemput saja',
+        'antar' => 'Antar saja',
+        'none' => 'Datang sendiri',
+    ];
+
     public const DELIVERY_METHODS = [
         'ambil' => 'Diambil sendiri',
         'antar' => 'Diantar',
@@ -167,6 +176,37 @@ class Order extends Model
     public function statusLabel(): string
     {
         return self::STATUSES[$this->status] ?? $this->status;
+    }
+
+    public function serviceType(): string
+    {
+        if ($this->mitra_id) {
+            return 'dropbox';
+        }
+
+        return match (true) {
+            $this->pickup && $this->delivery_method === 'antar' => 'keduanya',
+            $this->pickup => 'jemput',
+            $this->delivery_method === 'antar' => 'antar',
+            default => 'none',
+        };
+    }
+
+    public function serviceTypeLabel(): string
+    {
+        return self::SERVICE_TYPES[$this->serviceType()];
+    }
+
+    public function scopeServiceType(Builder $query, string $type): Builder
+    {
+        return match ($type) {
+            'dropbox' => $query->whereNotNull('mitra_id'),
+            'keduanya' => $query->whereNull('mitra_id')->where('pickup', true)->where('delivery_method', 'antar'),
+            'jemput' => $query->whereNull('mitra_id')->where('pickup', true)->where('delivery_method', '!=', 'antar'),
+            'antar' => $query->whereNull('mitra_id')->where('pickup', false)->where('delivery_method', 'antar'),
+            'none' => $query->whereNull('mitra_id')->where('pickup', false)->where('delivery_method', '!=', 'antar'),
+            default => $query,
+        };
     }
 
     public function awaitingWeighing(): bool

@@ -39,6 +39,10 @@ class OrderController extends Controller
             $query->where('payment_status', $payment);
         }
 
+        if (($type = $request->query('type')) && array_key_exists($type, Order::SERVICE_TYPES)) {
+            $query->serviceType($type);
+        }
+
         if ($mitra = $request->query('mitra')) {
             $query->where('mitra_id', $mitra);
         }

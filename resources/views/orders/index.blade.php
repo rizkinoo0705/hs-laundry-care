@@ -24,6 +24,15 @@
             </select>
         </div>
         <div>
+            <label for="type">Jenis</label>
+            <select id="type" name="type">
+                <option value="">Semua</option>
+                @foreach (\App\Models\Order::SERVICE_TYPES as $key => $label)
+                    <option value="{{ $key }}" @selected(request('type') === $key)>{{ $label }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div>
             <label for="payment">Pembayaran</label>
             <select id="payment" name="payment">
                 <option value="">Semua</option>
@@ -49,6 +58,7 @@
             <tr>
                 <th>No. Order</th>
                 <th>Pelanggan</th>
+                <th>Jenis</th>
                 <th>Status</th>
                 <th>Bayar</th>
                 <th class="num">Berat</th>
@@ -60,8 +70,9 @@
             @forelse ($orders as $order)
                 <tr>
                     <td data-label="No. Order"><a href="{{ route('orders.show', $order) }}" class="strong">{{ $order->code }}</a>
-                        @if ($order->mitra)<br><span class="small muted">via {{ $order->mitra->name }}</span>@endif</td>
+                        </td>
                     <td data-label="Pelanggan">{{ $order->customer->name }}<br><span class="small muted">{{ \App\Support\Phone::format($order->customer->phone) }}</span></td>
+                    <td data-label="Jenis"><span class="badge type-{{ $order->serviceType() }}">{{ $order->serviceTypeLabel() }}</span>@if ($order->mitra)<br><span class="small muted">{{ $order->mitra->name }}</span>@endif</td>
                     <td data-label="Status"><span class="badge badge-{{ $order->status }}">{{ $order->statusLabel() }}</span></td>
                     <td data-label="Bayar"><span class="badge badge-{{ $order->payment_status }}">{{ $order->isPaid() ? 'Lunas' : 'Belum' }}</span></td>
                     <td data-label="Berat" class="num">{{ $order->total_kg > 0 ? qty($order->total_kg).' kg' : '-' }}</td>
@@ -69,7 +80,7 @@
                     <td data-label="Masuk" class="small nowrap">{{ $order->created_at->translatedFormat('d M Y H:i') }}</td>
                 </tr>
             @empty
-                <tr><td colspan="7" class="empty">Belum ada order.</td></tr>
+                <tr><td colspan="8" class="empty">Belum ada order.</td></tr>
             @endforelse
             </tbody>
         </table>
