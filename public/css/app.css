@@ -292,6 +292,6 @@ fieldset.choice-group legend { font-size: 13px; font-weight: 600; color: #334155
 /* Jenis order di daftar */
 .badge.type-keduanya { background: var(--navy); color: var(--white); }
 .badge.type-dropbox { background: #FEF3C7; color: #92400E; }
-.badge.type-jemput { background: #EDE9FE; color: #5B21B6; }
+.badge.type-jemput { background: #FCE7F3; color: #9D174D; }
 .badge.type-antar { background: #CCFBF1; color: #115E59; }
 .badge.type-none { background: #E2E8F0; color: #334155; }
